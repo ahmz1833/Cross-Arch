@@ -7,11 +7,11 @@ set -u
 
 # Defaults (kept from the original)
 SUPPORTED_ARCHS=("mips" "s390x" "aarch64" "armv7" "riscv64" "i386")
-ARCH_ABBREV="mips"
-TARGET_ARCH="mips32el"
-ARCH_ABBREV_UPPER="MIPS"
+# ARCH_ABBREV="mips"
+# TARGET_ARCH="mips32el"
+# ARCH_ABBREV_UPPER="MIPS"
 TOOLCHAIN_VER="stable-2025.08-1"
-INSTALL_DIR="/opt/${ARCH_ABBREV}-lab"
+# INSTALL_DIR="/opt/${ARCH_ABBREV}-lab"
 LIBC="glibc"
 FORCE=0
 TAG=""
@@ -81,6 +81,19 @@ while [ "$#" -gt 0 ]; do
             echo -e "${RED}Unknown option: $1${NC}"; usage; exit 1;;
     esac
 done
+
+# Validate conflicting or incomplete options
+if [ -n "$TAG" ] && [ -n "$TARGET_ARCH" ]; then
+    echo -e "${RED}Error: --tag (-T) and --target (-t) cannot be used together.${NC}"
+    exit 1
+fi
+
+if [ -n "$TARGET_ARCH" ]; then
+    if [ -z "$ARCH_ABBREV" ] || [ -z "$ARCH_ABBREV_UPPER" ] || [ -z "$INSTALL_DIR" ]; then
+        echo -e "${RED}Error: When using --target (-t), you must also specify --arch-abbrev, --arch-abbrev-upper, and --install-dir.${NC}"
+        exit 1
+    fi
+fi
 
 # Supported architectures registry: tag:TARGET_ARCH:ARCH_ABBREV:ARCH_ABBREV_UPPER:INSTALL_DIR
 # Add or remove entries as needed. Users can pass --tag <tag> to pick one.
