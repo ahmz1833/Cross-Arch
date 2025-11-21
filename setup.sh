@@ -205,11 +205,11 @@ echo -e "${CYAN}>>> You can now use ${BOLD}${ARCH_ABBREV}-gcc, ${ARCH_ABBREV}-as
 echo 
 # Convenience helper: prefixed tools (if present)
 _TC_DIR="$INSTALL_DIR/bin"
-for t in gcc as g++ ld objdump readelf strip gdb ar; do
-    binpath="\$(find "$INSTALL_DIR/bin" -type f -name "*-\$t" 2>/dev/null | head -n 1 || true)"
-    if [ -n "\$binpath" ]; then
-        alias ${ARCH_ABBREV}-"\$t"="\$binpath"
+for _TOOL in gcc as g++ ld objdump readelf strip gdb ar; do
+    if [ -z "\$(find $INSTALL_DIR/bin -name "*-linux-gnu-\${_TOOL}" | head -n 1)" ]; then
+        echo "${YLW}Warning: Could not find \${_TOOL} in the toolchain. ${NC}"
     fi
+    alias ${ARCH_ABBREV}-\${_TOOL}="\$(find $INSTALL_DIR/bin -name "*-linux-gnu-\${_TOOL}" | head -n 1)"
 done
 EOL
 chmod +x "$ACTIVATE_FILE"
