@@ -1,20 +1,22 @@
-#!/bin/bash
-#######################################
-# Installer of bootlin cross-compilation tools
-# for any architecture lab environment.
-# By AHMZ
-# November 2025
-TARGET_ARCH="s390x-z13"
-ARCH_ABBREV="s390x"
-ARCH_ABBREV_UPPER="S390x"
+#!/usr/bin/env bash
+set -u
+#
+# Cleaner, argument-driven installer for Bootlin cross toolchains
+# By AHMZ - refactor Nov 2025
+#
+
+# Defaults (kept from the original)
+SUPPORTED_ARCHS=("mips" "s390x" "aarch64" "armv7" "riscv64" "i386")
+ARCH_ABBREV="mips"
+TARGET_ARCH="mips32el"
+ARCH_ABBREV_UPPER="MIPS"
 TOOLCHAIN_VER="stable-2025.08-1"
-LIBC="glibc"
-#######################################
-
-FILENAME="${TARGET_ARCH}--${LIBC}--${TOOLCHAIN_VER}.tar.xz"
-DOWNLOAD_URL="https://toolchains.bootlin.com/downloads/releases/toolchains/${TARGET_ARCH}/tarballs/${FILENAME}"
 INSTALL_DIR="/opt/${ARCH_ABBREV}-lab"
+LIBC="glibc"
+FORCE=0
+TAG=""
 
+# Colors
 GREEN='\033[0;32m'
 YLW='\033[0;33m'
 BLUE='\033[0;34m'
@@ -24,92 +26,188 @@ MGN='\033[0;35m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+usage() {
+    cat <<USG
+Usage: $0 [options]
+
+Options:
+  -T, --tag TAG            Use a predefined architecture tag (supported: ${SUPPORTED_ARCHS[*]})
+  -t, --target ARCH        Specify target triplet manually (don't use with --tag)
+  -l, --libc LIBC          Specify libc name (glibc/musl/ulibc) (default: ${LIBC})
+  -v, --version VER        Specify toolchain version string (default: ${TOOLCHAIN_VER})
+  -d, --install-dir DIR    Specify installation directory (overrides tag default)
+  --arch-abbrev ABBREV     Explicitly set short architecture abbreviation (overrides tag)
+  --arch-abbrev-upper STR  Explicitly set uppercase abbreviation (overrides tag)
+  -f, --force              Force re-install / overwrite existing install
+  -h, --help               Show this help
+
+Examples:
+  # Use a predefined tag (recommended):
+  sudo $0 --tag s390x
+
+  # Use a tag but override the install directory:
+  sudo $0 --tag aarch64 --install-dir /opt/custom-aarch64
+
+  # Specify everything manually (no tag):
+  sudo $0 --target riscv64-lp64d --version stable-2025.08-1 --install-dir /opt/riscv-lab
+
+  # Force reinstallation:
+  sudo $0 --tag s390x --force
+USG
+}
+
+# Parse args
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        -T|--tag)
+            TAG="$2"; shift 2;;
+        -t|--target)
+            TARGET_ARCH="$2"; shift 2;;
+        --arch-abbrev)
+            ARCH_ABBREV="$2"; shift 2;;
+        --arch-abbrev-upper)
+            ARCH_ABBREV_UPPER="$2"; shift 2;;
+        -l|--libc|--libc=*)
+            if [[ "$1" == *=* ]]; then LIBC="${1#*=}"; shift; else LIBC="$2"; shift 2; fi;;
+        -v|--version)
+            TOOLCHAIN_VER="$2"; shift 2;;
+        -d|--install-dir)
+            INSTALL_DIR="$2"; shift 2;;
+        -f|--force)
+            FORCE=1; shift;;
+        -h|--help)
+            usage; exit 0;;
+        *)
+            echo -e "${RED}Unknown option: $1${NC}"; usage; exit 1;;
+    esac
+done
+
+# Supported architectures registry: tag:TARGET_ARCH:ARCH_ABBREV:ARCH_ABBREV_UPPER:INSTALL_DIR
+# Add or remove entries as needed. Users can pass --tag <tag> to pick one.
+SUPPORTED_ARCHS=(
+	"mips:mips32el:mips:MIPS:/opt/mips-lab"
+    "s390x:s390x-z13:s390x:S390x:/opt/s390x-lab"
+    "aarch64:aarch64:aarch64:AARCH64:/opt/aarch64-lab"
+    "armv7:armv7-eabihf:arm32:ARM32:/opt/arm-lab"
+    "riscv64:riscv64-lp64d:riscv64:RISC-V:/opt/riscv-lab"
+    "i386:x86-core2:i386:x86-32bit:/opt/i386-lab"
+)
+
+# If a tag was provided, try to resolve it
+if [ -n "${TAG}" ]; then
+    found=0
+    OLDIFS=$IFS; IFS=':'
+    for entry in "${SUPPORTED_ARCHS[@]}"; do
+        read -r tag targ abbrev abv_up instdir <<< "$entry"
+        if [ "$tag" = "$TAG" ]; then
+            TARGET_ARCH="$targ"
+            ARCH_ABBREV="$abbrev"
+            ARCH_ABBREV_UPPER="$abv_up"
+            INSTALL_DIR="$instdir"
+            found=1
+            break
+        fi
+    done
+    IFS=$OLDIFS
+    if [ "$found" -ne 1 ]; then
+        echo -e "${RED}Unknown tag: ${TAG}. See SUPPORTED_ARCHS in the script.${NC}"
+        exit 1
+    fi
+fi
+
+# Recompute filename/url after any tag/overrides
+FILENAME="${TARGET_ARCH}--${LIBC}--${TOOLCHAIN_VER}.tar.xz"
+DOWNLOAD_URL="https://toolchains.bootlin.com/downloads/releases/toolchains/${TARGET_ARCH}/tarballs/${FILENAME}"
+
 echo
 echo -e "${CYAN}>>> Starting ${ARCH_ABBREV_UPPER} Lab Setup (Bootlin ${TOOLCHAIN_VER})...${NC}"
 
-# 1. Check for root privileges
+# Check root
 if [ "$EUID" -ne 0 ]; then
-  echo -e "${RED}Error: Please run as root (sudo ./setup.sh)${NC}"
-  exit 1
-fi
-
-# 2. Install system dependencies
-echo 
-echo -e "${CYAN}>>> Installing System Dependencies...${NC}"
-if command -v apt-get &> /dev/null; then  # Debian, Ubuntu
-    apt-get update && apt-get install -y qemu-user gdb-multiarch make wget xz-utils file
-elif command -v pacman &> /dev/null; then # Arch Linux, Manjaro
-    pacman -Sy --needed --noconfirm qemu-user gdb make wget xz
-elif command -v dnf &> /dev/null; then    # Fedora, RHEL, CentOS
-    dnf install -y qemu-user gdb make wget xz file
-else
-    echo -e "${RED}Unsupported package manager. Please install dependencies manually.${NC}"
-    exit 1
-fi
-if [ $? -ne 0 ]; then
-    echo -e "${RED}Failed to install dependencies. Please check your package manager.${NC}"
+    echo -e "${RED}Error: Please run as root (sudo $0 ...)${NC}"
     exit 1
 fi
 
-# 3. Download and extract the toolchain (idempotent)
-echo
-# If the toolchain appears already installed (contains bin files), skip download/extract
-if [ -d "$INSTALL_DIR" ] && [ -n "$(find "$INSTALL_DIR/bin" -maxdepth 1 -type f 2>/dev/null | head -n 1)" ]; then
-    echo -e "${YLW}>>> Toolchain already appears installed in ${INSTALL_DIR}. Skipping download/extract.${NC}"
+# Install dependencies (best-effort)
+echo -e "${CYAN}>>> Installing system dependencies (qemu-user, gdb, xz, wget/curl)...${NC}"
+if command -v apt-get >/dev/null 2>&1; then
+    apt-get update -y && apt-get install -y qemu-user gdb-multiarch make wget curl xz-utils file || true
+elif command -v pacman >/dev/null 2>&1; then
+    pacman -Sy --needed --noconfirm qemu-user gdb make wget curl xz file || true
+elif command -v dnf >/dev/null 2>&1; then
+    dnf install -y qemu-user gdb make wget curl xz file || true
+elif command -v yum >/dev/null 2>&1; then
+    yum install -y qemu-user gdb make wget curl xz file || true
 else
-    echo -e "${CYAN}>>> Downloading Toolchain (${FILENAME})...${NC}"
-    mkdir -p "$INSTALL_DIR"
-    wget -q --show-progress "$DOWNLOAD_URL" -O "/tmp/toolchain.tar.xz"
-    if [ $? -ne 0 ]; then
-        echo -e "${RED}Download failed! Check the URL or Version.${NC}"
-        exit 1
+    echo -e "${YLW}Warning: Couldn't auto-install packages. Please ensure qemu-user, gdb and xz are available.${NC}"
+fi
+
+# Idempotent install: skip unless FORCE
+if [ -d "$INSTALL_DIR" ] && [ "$FORCE" -ne 1 ] && [ -n "$(find "$INSTALL_DIR/bin" -maxdepth 1 -type f 2>/dev/null | head -n 1)" ]; then
+    echo -e "${YLW}>>> Toolchain already installed in ${INSTALL_DIR}. Use --force to reinstall.${NC}"
+else
+    tmpfile="$(mktemp -p /tmp bootlin.XXXXXX)"
+    trap 'rm -f "$tmpfile"' EXIT
+
+    echo -e "${CYAN}>>> Downloading ${FILENAME} ...${NC}"
+    if command -v wget >/dev/null 2>&1; then
+        wget -O "$tmpfile" "$DOWNLOAD_URL" --progress=dot:giga || { echo -e "${RED}Download failed via wget.${NC}"; exit 1; }
+    elif command -v curl >/dev/null 2>&1; then
+        curl -L -o "$tmpfile" "$DOWNLOAD_URL" || { echo -e "${RED}Download failed via curl.${NC}"; exit 1; }
+    else
+        echo -e "${RED}No downloader (wget/curl) found. Install one and retry.${NC}"; exit 1
     fi
 
-    echo -e "${BLUE}>>> Extracting...${NC}"
-    tar xf "/tmp/toolchain.tar.xz" -C "$INSTALL_DIR" --strip-components=1
-    rm "/tmp/toolchain.tar.xz"
+    echo -e "${BLUE}>>> Preparing install directory: ${INSTALL_DIR}${NC}"
+    rm -rf "$INSTALL_DIR"
+    mkdir -p "$INSTALL_DIR"
+
+    echo -e "${BLUE}>>> Extracting to ${INSTALL_DIR} ...${NC}"
+    if command -v tar >/dev/null 2>&1; then
+        tar xf "$tmpfile" -C "$INSTALL_DIR" --strip-components=1 || { echo -e "${RED}Extraction failed.${NC}"; exit 1; }
+    else
+        echo -e "${RED}tar not found. Cannot extract.${NC}"; exit 1
+    fi
+    rm -f "$tmpfile"
+    trap - EXIT
 fi
 
-# 4. Automatically find sysroot path
-SYSROOT_PATH=$(find "$INSTALL_DIR" -type d -name "sysroot" | head -n 1)
+# Try to find sysroot
+SYSROOT_PATH=""
+if [ -d "$INSTALL_DIR/sysroot" ]; then
+    SYSROOT_PATH="$INSTALL_DIR/sysroot"
+else
+    SYSROOT_PATH=$(find "$INSTALL_DIR" -type d -name "sysroot" 2>/dev/null | head -n 1 || true)
+fi
 
 if [ -z "$SYSROOT_PATH" ]; then
-    echo -e "${RED}Error: Could not find sysroot directory inside the toolchain!${NC}"
-    exit 1
+    echo -e "${YLW}Warning: Could not find 'sysroot' in the toolchain. Attempting to continue...${NC}"
+else
+    echo -e "${GREEN}>>> Found sysroot: ${SYSROOT_PATH}${NC}"
 fi
 
-echo
-echo -e "${GREEN}>>> Found Sysroot at: $SYSROOT_PATH${NC}"
-
-# 5. Create activation script
-echo
-echo -e "${CYAN}>>> Creating Activation Script...${NC}"
+# Create activation script with explicit values
 ACTIVATE_FILE="$INSTALL_DIR/activate"
-
+echo -e "${CYAN}>>> Creating activation script: ${ACTIVATE_FILE}${NC}"
 cat > "$ACTIVATE_FILE" <<EOL
-# Lab Environment
+#!/usr/bin/env bash
+# Activate the ${TARGET_ARCH} toolchain environment
 export PATH="$INSTALL_DIR/bin:\$PATH"
-export QEMU_LD_PREFIX="$SYSROOT_PATH"
-echo -e "${MGN}>>> Setting QEMU_LD_PREFIX to: ${BOLD}\$QEMU_LD_PREFIX${NC}"
+$( [ -n "$SYSROOT_PATH" ] && echo "export QEMU_LD_PREFIX=\"$SYSROOT_PATH\"" )
+echo ">>> ${ARCH_ABBREV_UPPER} toolchain activated (PATH updated)."
 
-# Aliases for ease of use
-# Note: Binary names might be different based on the toolchain naming conventions
-for _TOOL in as ar gcc g++ ld objdump readelf strip gdb; do
-    if [ -z "\$(find $INSTALL_DIR/bin -name "*-linux-gnu-\${_TOOL}" | head -n 1)" ]; then
-        echo "${YLW}Warning: Could not find \${_TOOL} in the toolchain. ${NC}"
+# Convenience helper: prefixed tools (if present)
+_TC_DIR="$INSTALL_DIR/bin"
+for t in gcc as g++ ld objdump readelf strip gdb ar; do
+    binpath="$(find "$INSTALL_DIR/bin" -type f -name "*-${t}" 2>/dev/null | head -n 1 || true)"
+    if [ -n "$binpath" ]; then
+        alias ${ARCH_ABBREV}-"$t"="$binpath"
     fi
-    alias ${ARCH_ABBREV}-\${_TOOL}="\$(find $INSTALL_DIR/bin -name "*-linux-gnu-\${_TOOL}" | head -n 1)"
 done
-echo 
-echo -e "${GREEN}${BOLD}>>> ${ARCH_ABBREV_UPPER} Environment (${TARGET_ARCH}) Activated!${NC}"
-echo -e "${CYAN}>>> You can now use ${BOLD}${ARCH_ABBREV}-gcc, ${ARCH_ABBREV}-as, ${ARCH_ABBREV}-gdb, etc.${NC}"
-echo 
 EOL
-
 chmod +x "$ACTIVATE_FILE"
 
 echo
+echo -e "${GREEN}${BOLD}>>> Installation complete.${NC}"
+echo -e "Run: ${MGN}source $ACTIVATE_FILE${NC} to start using the toolchain."
 echo
-echo -e "${GREEN}${BOLD}>>> Installation Complete!${NC}"
-echo -e "Run: ${MGN}${BOLD}source $ACTIVATE_FILE${NC} to start."
-echo 
