@@ -7,11 +7,7 @@ set -u
 
 # Defaults (kept from the original)
 SUPPORTED_ARCHS=("mips" "s390x" "aarch64" "armv7" "riscv64" "i386")
-# ARCH_ABBREV="mips"
-# TARGET_ARCH="mips32el"
-# ARCH_ABBREV_UPPER="MIPS"
 TOOLCHAIN_VER="stable-2025.08-1"
-# INSTALL_DIR="/opt/${ARCH_ABBREV}-lab"
 LIBC="glibc"
 FORCE=0
 TAG=""
@@ -41,6 +37,9 @@ Options:
   -f, --force              Force re-install / overwrite existing install
   -h, --help               Show this help
 
+Default Behavior:
+  If no arguments are provided, the script sets up nasm and x86_64 development environment.
+
 Examples:
   # Use a predefined tag (recommended):
   sudo $0 --tag s390x
@@ -50,6 +49,9 @@ Examples:
 
   # Specify everything manually (no tag):
   sudo $0 --target riscv64-lp64d --version stable-2025.08-1 --install-dir /opt/riscv-lab
+
+  # Default setup for nasm and x86_64:
+  sudo $0
 
   # Force reinstallation:
   sudo $0 --tag s390x --force
@@ -146,6 +148,33 @@ if [ "$EUID" -ne 0 ]; then
     echo -e "${RED}Error: Please run as root (sudo $0 ...)${NC}"
 	echo 
     exit 1
+fi
+
+# Default behavior when no arguments are provided
+if [ "$#" -eq 0 ]; then
+    echo -e "${CYAN}>>> No arguments provided. Defaulting to setup for nasm and x86_64.${NC}"
+    TAG="x86_64"
+    TARGET_ARCH="x86_64"
+    ARCH_ABBREV="x86_64"
+    ARCH_ABBREV_UPPER="X86_64"
+    INSTALL_DIR="/opt/x86_64-lab"
+
+    # Install essential system dependencies for nasm and x86_64
+    echo -e "${CYAN}>>> Installing nasm and essential build tools...${NC}"
+    if command -v apt-get >/dev/null 2>&1; then
+        apt-get update -y && apt-get install -y nasm build-essential || true
+    elif command -v pacman >/dev/null 2>&1; then
+        pacman -Sy --needed --noconfirm nasm base-devel || true
+    elif command -v dnf >/dev/null 2>&1; then
+        dnf install -y nasm gcc make || true
+    elif command -v yum >/dev/null 2>&1; then
+        yum install -y nasm gcc make || true
+    else
+        echo -e "${YLW}Warning: Couldn't auto-install packages. Please ensure nasm and build tools are available.${NC}"
+    fi
+
+    echo -e "${GREEN}>>> Default setup for nasm and x86_64 complete.${NC}"
+    exit 0
 fi
 
 # Install dependencies (best-effort)
