@@ -225,7 +225,7 @@ echo
 # Convenience helper: prefixed tools (if present)
 _TC_DIR="$INSTALL_DIR/bin"
 for _TOOL in gcc as g++ ld objdump readelf strip gdb ar; do
-    if [ -z "\$(find $INSTALL_DIR/bin -name "*-linux-gnu-\${_TOOL}" | head -n 1)" ]; then
+    if [ -z "\$(find $INSTALL_DIR/bin -name "*-linux-\${_TOOL}" | head -n 1)" ]; then
         echo "${YLW}Warning: Could not find \${_TOOL} in the toolchain. ${NC}"
     fi
     alias ${ARCH_ABBREV}-\${_TOOL}="\$(find $INSTALL_DIR/bin -name "*-linux-gnu-\${_TOOL}" | head -n 1)"
