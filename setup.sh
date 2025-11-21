@@ -82,6 +82,12 @@ while [ "$#" -gt 0 ]; do
     esac
 done
 
+# Ensure variables are defined before accessing them
+: "${TARGET_ARCH:=}"  # Default to empty if not set
+: "${ARCH_ABBREV:=}"  # Default to empty if not set
+: "${ARCH_ABBREV_UPPER:=}"  # Default to empty if not set
+: "${INSTALL_DIR:=}"  # Default to empty if not set
+
 # Validate conflicting or incomplete options
 if [ -n "$TAG" ] && [ -n "$TARGET_ARCH" ]; then
     echo -e "${RED}Error: --tag (-T) and --target (-t) cannot be used together.${NC}"
