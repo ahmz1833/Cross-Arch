@@ -90,7 +90,7 @@ cat > "$ACTIVATE_FILE" <<EOL
 # Lab Environment
 export PATH="$INSTALL_DIR/bin:\$PATH"
 export QEMU_LD_PREFIX="$SYSROOT_PATH"
-echo "${MGN}>>> Setting QEMU_LD_PREFIX to: ${BOLD}\$QEMU_LD_PREFIX${NC}"
+echo -e "${MGN}>>> Setting QEMU_LD_PREFIX to: ${BOLD}\$QEMU_LD_PREFIX${NC}"
 
 # Aliases for ease of use
 # Note: Binary names might be different based on the toolchain naming conventions
@@ -101,8 +101,8 @@ for _TOOL in as ar gcc g++ ld objdump readelf strip gdb; do
     alias ${ARCH_ABBREV}-\${_TOOL}="\$(find $INSTALL_DIR/bin -name "*-linux-gnu-\${_TOOL}" | head -n 1)"
 done
 echo 
-echo "${GREEN}${BOLD}>>> ${ARCH_ABBREV_UPPER} Environment (${TARGET_ARCH}) Activated!${NC}"
-echo "${CYAN}>>> You can now use ${BOLD}${ARCH_ABBREV}-gcc, ${ARCH_ABBREV}-as, ${ARCH_ABBREV}-gdb, etc.${NC}"
+echo -e "${GREEN}${BOLD}>>> ${ARCH_ABBREV_UPPER} Environment (${TARGET_ARCH}) Activated!${NC}"
+echo -e "${CYAN}>>> You can now use ${BOLD}${ARCH_ABBREV}-gcc, ${ARCH_ABBREV}-as, ${ARCH_ABBREV}-gdb, etc.${NC}"
 echo 
 EOL
 
