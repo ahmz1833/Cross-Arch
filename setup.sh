@@ -125,6 +125,7 @@ echo -e "${CYAN}>>> Starting ${ARCH_ABBREV_UPPER} Lab Setup (Bootlin ${TOOLCHAIN
 # Check root
 if [ "$EUID" -ne 0 ]; then
     echo -e "${RED}Error: Please run as root (sudo $0 ...)${NC}"
+	echo 
     exit 1
 fi
 
@@ -143,6 +144,7 @@ else
 fi
 
 # Idempotent install: skip unless FORCE
+echo 
 if [ -d "$INSTALL_DIR" ] && [ "$FORCE" -ne 1 ] && [ -n "$(find "$INSTALL_DIR/bin" -maxdepth 1 -type f 2>/dev/null | head -n 1)" ]; then
     echo -e "${YLW}>>> Toolchain already installed in ${INSTALL_DIR}. Use --force to reinstall.${NC}"
 else
@@ -158,11 +160,11 @@ else
         echo -e "${RED}No downloader (wget/curl) found. Install one and retry.${NC}"; exit 1
     fi
 
-    echo -e "${BLUE}>>> Preparing install directory: ${INSTALL_DIR}${NC}"
+    echo -e "${BLUE}>>> Preparing install directory: ${CYAN}${BOLD}${INSTALL_DIR}${NC}"
     rm -rf "$INSTALL_DIR"
     mkdir -p "$INSTALL_DIR"
 
-    echo -e "${BLUE}>>> Extracting to ${INSTALL_DIR} ...${NC}"
+    echo -e "${BLUE}>>> Extracting to ${BOLD}${INSTALL_DIR}${NC} ...${NC}"
     if command -v tar >/dev/null 2>&1; then
         tar xf "$tmpfile" -C "$INSTALL_DIR" --strip-components=1 || { echo -e "${RED}Extraction failed.${NC}"; exit 1; }
     else
@@ -180,6 +182,7 @@ else
     SYSROOT_PATH=$(find "$INSTALL_DIR" -type d -name "sysroot" 2>/dev/null | head -n 1 || true)
 fi
 
+echo
 if [ -z "$SYSROOT_PATH" ]; then
     echo -e "${YLW}Warning: Could not find 'sysroot' in the toolchain. Attempting to continue...${NC}"
 else
@@ -188,6 +191,7 @@ fi
 
 # Create activation script with explicit values
 ACTIVATE_FILE="$INSTALL_DIR/activate"
+echo
 echo -e "${CYAN}>>> Creating activation script: ${ACTIVATE_FILE}${NC}"
 cat > "$ACTIVATE_FILE" <<EOL
 #!/usr/bin/env bash
@@ -199,9 +203,9 @@ echo ">>> ${ARCH_ABBREV_UPPER} toolchain activated (PATH updated)."
 # Convenience helper: prefixed tools (if present)
 _TC_DIR="$INSTALL_DIR/bin"
 for t in gcc as g++ ld objdump readelf strip gdb ar; do
-    binpath="$(find "$INSTALL_DIR/bin" -type f -name "*-${t}" 2>/dev/null | head -n 1 || true)"
-    if [ -n "$binpath" ]; then
-        alias ${ARCH_ABBREV}-"$t"="$binpath"
+    binpath="\$(find "$INSTALL_DIR/bin" -type f -name "*-\$t" 2>/dev/null | head -n 1 || true)"
+    if [ -n "\$binpath" ]; then
+        alias ${ARCH_ABBREV}-"\$t"="\$binpath"
     fi
 done
 EOL
