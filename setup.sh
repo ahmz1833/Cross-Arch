@@ -106,8 +106,8 @@ fi
 SUPPORTED_ARCHS=(
 	"mips:mips32el:mips:MIPS:/opt/mips-lab"
     "s390x:s390x-z13:s390x:S390x:/opt/s390x-lab"
-    "aarch64:aarch64:aarch64:AARCH64:/opt/aarch64-lab"
-    "armv7:armv7-eabihf:arm32:ARM32:/opt/arm-lab"
+    "aarch64:aarch64:aarch64:AARCH64:/opt/arm64-lab"
+    "armv7:armv7-eabihf:armv7:ARM-v7:/opt/armv7-lab"
     "riscv64:riscv64-lp64d:riscv64:RISC-V:/opt/riscv-lab"
     "i386:x86-core2:i386:x86-32bit:/opt/i386-lab"
 )
@@ -225,10 +225,11 @@ echo
 # Convenience helper: prefixed tools (if present)
 _TC_DIR="$INSTALL_DIR/bin"
 for _TOOL in gcc as g++ ld objdump readelf strip gdb ar; do
-    if [ -z "\$(find $INSTALL_DIR/bin -name "*-linux-\${_TOOL}" | head -n 1)" ]; then
-        echo "${YLW}Warning: Could not find \${_TOOL} in the toolchain. ${NC}"
+	_bin="\$(find $INSTALL_DIR/bin -name "*-linux-\${_TOOL}" | head -n 1)"
+    if [ -z "\$_bin" ]; then
+        echo -e "${YLW}Warning: Could not find \${_TOOL} in the toolchain. ${NC}"
     fi
-    alias ${ARCH_ABBREV}-\${_TOOL}="\$(find $INSTALL_DIR/bin -name "*-linux-gnu-\${_TOOL}" | head -n 1)"
+    alias ${ARCH_ABBREV}-\${_TOOL}="\$_bin"
 done
 EOL
 chmod +x "$ACTIVATE_FILE"
