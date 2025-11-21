@@ -198,8 +198,11 @@ cat > "$ACTIVATE_FILE" <<EOL
 # Activate the ${TARGET_ARCH} toolchain environment
 export PATH="$INSTALL_DIR/bin:\$PATH"
 $( [ -n "$SYSROOT_PATH" ] && echo "export QEMU_LD_PREFIX=\"$SYSROOT_PATH\"" )
-echo ">>> ${ARCH_ABBREV_UPPER} toolchain activated (PATH updated)."
-
+echo 
+echo -e "${MGN}>>> Setting QEMU_LD_PREFIX to: ${BOLD}\$QEMU_LD_PREFIX${NC}"
+echo -e "${GREEN}${BOLD}>>> ${ARCH_ABBREV_UPPER} Environment (${TARGET_ARCH}) Activated!${NC}"
+echo -e "${CYAN}>>> You can now use ${BOLD}${ARCH_ABBREV}-gcc, ${ARCH_ABBREV}-as, ${ARCH_ABBREV}-gdb, etc.${NC}"
+echo 
 # Convenience helper: prefixed tools (if present)
 _TC_DIR="$INSTALL_DIR/bin"
 for t in gcc as g++ ld objdump readelf strip gdb ar; do
