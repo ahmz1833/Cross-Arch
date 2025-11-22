@@ -106,7 +106,7 @@ fi
 # Supported architectures registry: tag:TARGET_ARCH:ARCH_ABBREV:ARCH_ABBREV_UPPER:INSTALL_DIR
 # Add or remove entries as needed. Users can pass --tag <tag> to pick one.
 SUPPORTED_ARCHS=(
-	"mips:mips32el:mips:MIPS:/opt/mips-lab"
+    "mips:mips32el:mips:MIPS:/opt/mips-lab"
     "s390x:s390x-z13:s390x:S390x:/opt/s390x-lab"
     "aarch64:aarch64:aarch64:AARCH64:/opt/arm64-lab"
     "armv7:armv7-eabihf:armv7:ARM-v7:/opt/armv7-lab"
@@ -150,8 +150,8 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# Default behavior when no arguments are provided
-if [ "$#" -eq 0 ]; then
+# If Target Arch is empty yet
+if [ -z "$TARGET_ARCH" ]; then
     echo -e "${CYAN}>>> No arguments provided. Defaulting to setup for nasm and x86_64.${NC}"
     TAG="x86_64"
     TARGET_ARCH="x86_64"
