@@ -326,5 +326,5 @@ chmod +x "$ACTIVATE_FILE"
 
 echo
 echo -e "${GREEN}${BOLD}>>> Installation complete.${NC}"
-echo -e "Run: ${MGN}source $ACTIVATE_FILE${NC} to start using the toolchain."
+echo -e "Run: ${MGN}${BOLD}source lab-activate ${TAG}${NC} to start using the toolchain."
 echo
