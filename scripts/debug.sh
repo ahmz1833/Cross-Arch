@@ -39,7 +39,12 @@ usage() {
 
 find_free_port() {
     local port=$1
-    if ! command -v ss &> /dev/null; then echo -e "${RED}Error: ss command not found. Please install iproute2 package.${NC}"; exit 1; fi
+    if ! command -v ss &> /dev/null; then 
+        echo -e "${YLW}Warning: 'ss' not found. Using default port $port.${NC}" >&2
+        echo "$port"
+        return
+    fi
+    
     while ss -lptn "sport = :$port" 2>/dev/null | grep -q ":$port"; do
         echo -e "${YLW}Port $port is busy, trying next...${NC}" >&2
         ((port++))
@@ -118,6 +123,13 @@ if [ -z "$EXECUTABLE" ] || [ ! -f "$EXECUTABLE" ]; then
 fi
 [ ! -x "$EXECUTABLE" ] && chmod +x "$EXECUTABLE"
 
+# Determine full path to executable
+if [[ "$EXECUTABLE" == /* ]]; then
+    TARGET_BIN="$EXECUTABLE"
+else
+    TARGET_BIN="./$EXECUTABLE"
+fi
+
 # --- Prepare Commands ---
 FINAL_PORT=$(find_free_port "$PORT")
 if [ -z "$TAG" ]; then
@@ -189,6 +201,7 @@ if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
     SESSION_NAME="${SESSION_NAME}-$((RANDOM % 1000))"
 fi
 
+export TERM=xterm-256color
 echo -e "${CYAN}>>> Starting Session: $SESSION_NAME (Port: $FINAL_PORT)${NC}"
 tmux new-session -d -s "$SESSION_NAME" "$CMD_SERVER_FINAL"
 tmux split-window -h -t "$SESSION_NAME" "$CMD_CLIENT_FINAL"
