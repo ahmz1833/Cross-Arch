@@ -174,8 +174,23 @@ else
         RUNNER_CMD="QEMU_LD_PREFIX=\"$QEMU_LD_PREFIX\" $QEMU_BIN -g $FINAL_PORT $TARGET_BIN"
     fi
 
-	GDB_BIN=$(find "/opt/${TAG}-lab/bin" -name "*-linux-gdb" | head -n 1)
-    if [ -z "$GDB_BIN" ] || [ ! -x "$GDB_BIN" ]; then echo -e "${RED}Error: Cross GDB binary not found in /opt/${TAG}-lab/bin.${NC}"; exit 1; fi
+    if [ -z "${QEMU_LD_PREFIX:-}" ]; then
+        CURRENT_SYSROOT=$(grep "export QEMU_LD_PREFIX" "$ACTIVATE_SCRIPT" | cut -d'"' -f2)
+    else
+        CURRENT_SYSROOT="$QEMU_LD_PREFIX"
+    fi
+    
+    if command -v gdb-multiarch &> /dev/null; then
+        GDB_BIN="gdb-multiarch"
+    elif command -v gdb &> /dev/null; then
+        GDB_BIN="gdb"
+    else
+        echo -e "${RED}Error: Neither 'gdb-multiarch' nor 'gdb' found.${NC}"
+        exit 1
+    fi
+
+    #GDB_BIN=$(find "/opt/${TAG}-lab/bin" -name "*-linux-gdb" | head -n 1)
+    #if [ -z "$GDB_BIN" ] || [ ! -x "$GDB_BIN" ]; then echo -e "${RED}Error: Cross GDB binary not found in /opt/${TAG}-lab/bin.${NC}"; exit 1; fi
     if ! command -v "$QEMU_BIN" &> /dev/null; then echo -e "${RED}Error: $QEMU_BIN not found. Please install QEMU user binaries.${NC}"; exit 1; fi
 fi
 
@@ -183,8 +198,11 @@ fi
 CMD_SERVER_RAW="echo -e \"${GREEN}>>> Starting Program under Debugger...${NC}\"; $RUNNER_CMD; \
 	echo -e \"${YLW}>>> Program exited with code \$?. Pressing any key to close...${NC}\"; read -n 1 -s"
 
-CMD_CLIENT_RAW="sleep 1; echo -e \"${GREEN}>>> Connecting GDB to Target...${NC}\"; $GDB_BIN -q ./$EXECUTABLE \
+CMD_CLIENT_RAW="sleep 1; echo -e \"${GREEN}>>> Connecting GDB to Target...${NC}\"; \
+	export TERM=xterm-256color; \
+	$GDB_BIN -q $TARGET_BIN \
 	-ex \"target remote localhost:$FINAL_PORT\" \
+	-ex \"set sysroot $CURRENT_SYSROOT\" \
 	-ex \"layout asm\" \
 	-ex \"layout regs\" \
 	-ex \"focus cmd\" \
@@ -201,7 +219,6 @@ if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
     SESSION_NAME="${SESSION_NAME}-$((RANDOM % 1000))"
 fi
 
-export TERM=xterm-256color
 echo -e "${CYAN}>>> Starting Session: $SESSION_NAME (Port: $FINAL_PORT)${NC}"
 tmux new-session -d -s "$SESSION_NAME" "$CMD_SERVER_FINAL"
 tmux split-window -h -t "$SESSION_NAME" "$CMD_CLIENT_FINAL"

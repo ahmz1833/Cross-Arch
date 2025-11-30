@@ -63,13 +63,10 @@ done
 
 # --- 3. Construct Docker Command ---
 
-IT_FLAGS=""
-if [ -t 0 ]; then IT_FLAGS="-it"; fi
-
 CMD_STRING="$CMD_NAME ${NEW_ARGS[*]}"
 
 # Execute
-exec docker run $IT_FLAGS --rm \
+exec docker run -it --rm \
     --platform linux/amd64 \
     -u "$(id -u):$(id -g)" \
     -v "$HOST_MOUNT_ROOT:$CONTAINER_MOUNT_POINT" \

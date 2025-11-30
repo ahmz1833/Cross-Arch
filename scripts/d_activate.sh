@@ -85,7 +85,7 @@ if ! command -v __lab_wrapper &> /dev/null; then
 fi
 
 # Ensure lab commands are installed and linked to wrapper
-LAB_COMMANDS=("ar" "as" "build" "debug" "g++" "gcc" "gdb" "ld" "objdump" "readelf" "run" "strip")
+LAB_COMMANDS=("ar" "as" "build" "debug" "g++" "gcc" "ld" "objdump" "readelf" "run" "strip")
 for cmd in "${LAB_COMMANDS[@]}"; do
 	if ! command -v "lab-$cmd" &> /dev/null; then
 		echo "Installing lab-$cmd command..."

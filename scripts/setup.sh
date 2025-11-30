@@ -309,11 +309,11 @@ $( [ -n "$SYSROOT_PATH" ] && echo "export QEMU_LD_PREFIX=\"$SYSROOT_PATH\"" )
 echo 
 echo -e "${MGN}>>> Setting QEMU_LD_PREFIX to: ${BOLD}\$QEMU_LD_PREFIX${NC}"
 echo -e "${GREEN}${BOLD}>>> ${ARCH_ABBREV_UPPER} Environment (${TARGET_ARCH}) Activated!${NC}"
-echo -e "${CYAN}>>> You can now use ${BOLD}lab-gcc, lab-as, lab-gdb, lab-run, lab-build, lab-debug etc.${NC}"
+echo -e "${CYAN}>>> You can now use ${BOLD}lab-gcc, lab-as, lab-run, lab-build, lab-debug etc.${NC}"
 echo 
 # Convenience helper: prefixed tools (if present)
 _TC_DIR="$INSTALL_DIR/bin"
-for _TOOL in gcc as g++ ld objdump readelf strip gdb ar; do
+for _TOOL in gcc as g++ ld objdump readelf strip ar; do
     _bin="\$(find $INSTALL_DIR/bin -name "*-linux-\${_TOOL}" | head -n 1)"
     if [ -z "\$_bin" ]; then
         echo -e "${YLW}Warning: Could not find \${_TOOL} in the toolchain. ${NC}"

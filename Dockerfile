@@ -14,12 +14,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ncurses-term        \
     iproute2            \
     xz-utils            \
-    curl                \
-    wget                \
+    curl wget           \
     file                \
     make                \
     sudo                \
-    tmux                \
+    tmux tmuxinator	\
     nano                \
     gdb-multiarch       \
     && if [ "${LAB_ARCH}" = "amd64" ]; then                 \
