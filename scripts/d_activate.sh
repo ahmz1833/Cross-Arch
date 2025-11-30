@@ -6,6 +6,8 @@
 ## NOTE: This script must be SOURCED, not executed.
 ## ==============================================================================
 
+DOCKER_IMAGE="ghcr.io/ahmz1833/cross-arch"
+
 # Check if script is sourced
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]] && [[ -z "$ZSH_EVAL_CONTEXT" ]]; then
     echo "Error: This script must be sourced."
@@ -32,20 +34,12 @@ fi
 export LAB_ARCH="$TARGET"
 
 # Attempt to pull a matching Docker image for this architecture.
-# Behavior:
-# - If `LAB_IMAGE` environment variable is set, try that exact image first.
-# - Otherwise try a short list of common image-name candidates.
-# - If `docker` is not available or all pulls fail, abort with an error.
+# If `docker` is not available or all pulls fail, abort with an error.
 if command -v docker &> /dev/null; then
     # Candidate images to try (in order). Users may override with LAB_IMAGE.
-    if [ -n "${LAB_IMAGE:-}" ]; then
-        CANDIDATES=("$LAB_IMAGE")
-    else
-        CANDIDATES=(
-            "ghcr.io/ahmz1833/cross-arch:${LAB_ARCH}"
-            "cross-arch:${LAB_ARCH}"
-        )
-    fi
+    CANDIDATES=(
+        "${DOCKER_IMAGE}:${LAB_ARCH}"
+    )
 
     PULLED_IMAGE=""
     for img in "${CANDIDATES[@]}"; do
