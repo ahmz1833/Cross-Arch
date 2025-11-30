@@ -49,13 +49,24 @@ if command -v docker &> /dev/null; then
 
     PULLED_IMAGE=""
     for img in "${CANDIDATES[@]}"; do
-        echo ">>> Pulling Docker image: $img"
-        if docker pull "$img"; then
+        # 1. Check if image exists LOCALLY first
+        if docker image inspect "$img" >/dev/null 2>&1; then
+            echo ">>> Found local image: $img"
             PULLED_IMAGE="$img"
-            echo ">>> Successfully pulled: $img"
             break
-        else
-            echo "--- Failed to pull: $img -- trying next candidate if any"
+        fi
+
+        # 2. If not local, try to PULL (Only for remote registries or explicitly configured ones)
+        # We skip pulling 'cross-arch:tag' because it's definitely not on Docker Hub
+        if [[ "$img" == *"/"* ]]; then
+            echo ">>> Image not found locally. Attempting pull: $img"
+            if docker pull "$img"; then
+                PULLED_IMAGE="$img"
+                echo ">>> Successfully pulled: $img"
+                break
+            else
+                echo "--- Failed to pull: $img"
+            fi
         fi
     done
 
