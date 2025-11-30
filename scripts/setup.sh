@@ -153,9 +153,9 @@ SUPPORTED_ARCHS=(
     "amd64:amd64:amd64:AMD64:/opt/amd64-lab"
     "mips:mips32el:mipsel:MIPS:/opt/mips-lab"
     "s390x:s390x-z13:s390x:S390x:/opt/s390x-lab"
-    "aarch64:aarch64:aarch64:AARCH64:/opt/arm64-lab"
+    "aarch64:aarch64:aarch64:AARCH64:/opt/aarch64-lab"
     "armv7:armv7-eabihf:arm:ARM-v7:/opt/armv7-lab"
-    "riscv64:riscv64-lp64d:riscv64:RISC-V:/opt/riscv-lab"
+    "riscv64:riscv64-lp64d:riscv64:RISC-V:/opt/riscv64-lab"
     "i386:x86-core2:i386:x86-32bit:/opt/i386-lab"
 )
 

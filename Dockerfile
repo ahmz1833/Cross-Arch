@@ -89,7 +89,10 @@ RUN ACTIVATE_SCRIPT="/opt/${LAB_ARCH}-lab/activate"; \
         grep "alias lab-run=" "$ACTIVATE_SCRIPT" | sed 's/alias lab-run=//; s/^"/exec /; s/"$/\ "$@"/' >> /usr/local/bin/lab-run; \
         chmod +x /usr/local/bin/lab-run; \
     else \
-        echo "Activation script not found: $ACTIVATE_SCRIPT"; \
+        echo "Creating lab-run wrapper for amd64 native"; \
+        echo '#!/bin/bash' > /usr/local/bin/lab-run; \
+        echo 'exec "$@"' >> /usr/local/bin/lab-run; \
+        chmod +x /usr/local/bin/lab-run; \
     fi
 
 # Finalize entrypoint to load profiles and switch to non-root user
