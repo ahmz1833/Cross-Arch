@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 set -u
+## ==============================================================================
+## Debugging helper script for cross-architecture binaries
+## By AHMZ - November 2025
+## Usage: lab-debug [options] <executable> [program-args...]
+## ==============================================================================
 
 # --- Configuration ---
 DEFAULT_PORT=1234
@@ -17,17 +22,18 @@ NC='\033[0m'
 # --- Helper Functions ---
 
 usage() {
-    echo -e "${BLUE}Usage: $0 [options] <executable>${NC}"
+    echo -e "${BLUE}Usage: $0 [options] <executable> [program-args...]${NC}"
     echo
     echo "Options:"
-    echo "  -T, --tag <arch>    Architecture tag (e.g., mips, aarch64)."
-    echo "                      If OMITTED, runs in NATIVE mode (Host Debugging)."
     echo "  -p, --port <port>   Starting port"
+    echo "  -T, --tag <arch>    Architecture tag (e.g., mips, aarch64)."
+    echo "                      Default: \$LAB_ARCH variable or native debugging if unset."
     echo "  -h, --help          Show this help"
     echo
     echo "Examples:"
-    echo "  $0 ./my_host_program          (Native Debugging)"
-    echo "  $0 -T mips ./mips_program     (Cross Debugging with QEMU)"
+    echo "  $0 ./native_program                 (Native Debugging)"
+    echo "  $0 -T mips ./mips_program           (Cross Debugging with QEMU)"
+    echo "  LAB_ARCH=mips $0 ./my_host_program  (Cross Debugging with QEMU)"
     exit 1
 }
 
@@ -68,12 +74,42 @@ while [[ $# -gt 0 ]]; do
             PORT="$2"; shift 2;;
         -h|--help)
             usage;;
-        -*)
+        -* )
             echo -e "${RED}Unknown option: $1${NC}"; usage;;
-        *)
-            EXECUTABLE="$1"; shift;;
+        * )
+            # First non-option is the executable; everything after it are program args
+            if [[ -z "${EXECUTABLE}" ]]; then
+                EXECUTABLE="$1"
+                shift
+                # Capture remaining args as program arguments
+                EXEC_ARGS=("$@")
+                break
+            else
+                shift
+            fi
+            ;;
     esac
 done
+
+# Ensure `EXEC_ARGS` is an array and is empty when no program args were provided.
+if [ "${EXEC_ARGS+set}" != "set" ]; then
+    EXEC_ARGS=()
+else
+    # normalize to an array (preserve empty-string elements if explicitly provided)
+    EXEC_ARGS=("${EXEC_ARGS[@]}")
+fi
+
+# Fallback to LAB_ARCH env when -T/--tag was omitted
+if [[ -z "$TAG" ]]; then
+    LAB_ARCH_ENV="${LAB_ARCH:-}"
+    if [[ -n "$LAB_ARCH_ENV" ]]; then
+        LAB_ARCH_LOWER=$(printf '%s' "$LAB_ARCH_ENV" | tr '[:upper:]' '[:lower:]')
+        if [[ "$LAB_ARCH_LOWER" != "amd64" && "$LAB_ARCH_LOWER" != "x86_64" ]]; then
+            TAG="$LAB_ARCH_ENV"
+            echo -e "${CYAN}>>> Using LAB_ARCH=${LAB_ARCH_ENV} for cross debugging.${NC}"
+        fi
+    fi
+fi
 
 # --- Validation Common ---
 if [ -z "$EXECUTABLE" ] || [ ! -f "$EXECUTABLE" ]; then
@@ -87,7 +123,22 @@ FINAL_PORT=$(find_free_port "$PORT")
 if [ -z "$TAG" ]; then
     # === NATIVE MODE ===
     MODE="NATIVE"
-    RUNNER_CMD="gdbserver localhost:$FINAL_PORT ./$EXECUTABLE"
+
+    # Build escaped argument string for safe embedding inside command strings
+    EXEC_ARGS_ESC=""
+    for __a in "${EXEC_ARGS[@]}"; do
+        # escape backslashes and double quotes for safe double-quoted tokens
+        __esc=${__a//\\/\\\\}
+        __esc=${__esc//\"/\\\"}
+        EXEC_ARGS_ESC+=" \"$__esc\""
+    done
+    
+    if [[ -n "${EXEC_ARGS_ESC}" ]]; then
+        RUNNER_CMD="gdbserver localhost:$FINAL_PORT ./$EXECUTABLE$EXEC_ARGS_ESC"
+    else 
+        RUNNER_CMD="gdbserver localhost:$FINAL_PORT ./$EXECUTABLE"
+    fi
+
 	GDB_BIN="gdb"
 	if ! command -v gdb &> /dev/null; then echo -e "${RED}Error: gdb not found.${NC}"; exit 1; fi
 	if ! command -v gdbserver &> /dev/null; then echo -e "${RED}Error: gdbserver not found.${NC}"; exit 1; fi
@@ -95,8 +146,22 @@ else
     # === CROSS MODE ===
     MODE="CROSS"
     QEMU_BIN=$(get_qemu_binary "$TAG")
-    source "/opt/${TAG}-lab/activate" || { echo -e "${RED}Error: Could not source toolchain for tag: $TAG${NC}"; exit 1; }
-	RUNNER_CMD="QEMU_LD_PREFIX=\"$QEMU_LD_PREFIX\" $QEMU_BIN -g $FINAL_PORT ./$EXECUTABLE"
+    source "/opt/${TAG}-lab/activate" > /dev/null || { echo -e "${RED}Error: Could not source toolchain for tag: $TAG${NC}"; exit 1; }
+
+    # Build escaped argument string for safe embedding inside command strings (reuse if already built)
+    EXEC_ARGS_ESC=""
+    for __a in "${EXEC_ARGS[@]}"; do
+        __esc=${__a//\\/\\\\}
+        __esc=${__esc//\"/\\\"}
+        EXEC_ARGS_ESC+=" \"$__esc\""
+    done
+
+    if [[ -n "${EXEC_ARGS_ESC}" ]]; then
+        RUNNER_CMD="QEMU_LD_PREFIX=\"$QEMU_LD_PREFIX\" $QEMU_BIN -g $FINAL_PORT ./$EXECUTABLE$EXEC_ARGS_ESC"
+    else 
+        RUNNER_CMD="QEMU_LD_PREFIX=\"$QEMU_LD_PREFIX\" $QEMU_BIN -g $FINAL_PORT ./$EXECUTABLE"
+    fi
+
 	GDB_BIN=$(find "/opt/${TAG}-lab/bin" -name "*-linux-gdb" | head -n 1)
     if [ -z "$GDB_BIN" ] || [ ! -x "$GDB_BIN" ]; then echo -e "${RED}Error: Cross GDB binary not found in /opt/${TAG}-lab/bin.${NC}"; exit 1; fi
     if ! command -v "$QEMU_BIN" &> /dev/null; then echo -e "${RED}Error: $QEMU_BIN not found. Please install QEMU user binaries.${NC}"; exit 1; fi

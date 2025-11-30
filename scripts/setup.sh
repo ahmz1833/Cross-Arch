@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -u
-#
-# Cleaner, argument-driven installer for Bootlin cross toolchains
-# By AHMZ - refactor Nov 2025
-#
+## ==============================================================================
+## Clean and argument-driven installer for Bootlin cross toolchains
+## By AHMZ - November 2025
+## Usage: sudo lab-setup [options]
+## ==============================================================================
 
 # Defaults (kept from the original)
 SUPPORTED_ARCHS=("mips" "s390x" "aarch64" "armv7" "riscv64" "i386")
@@ -38,7 +39,7 @@ Options:
   -h, --help               Show this help
 
 Default Behavior:
-  If no arguments are provided, the script sets up nasm and x86_64 development environment.
+  If no arguments are provided, the script sets up nasm and amd64 development environment.
 
 Examples:
   # Use a predefined tag (recommended):
@@ -50,12 +51,55 @@ Examples:
   # Specify everything manually (no tag):
   sudo $0 --target riscv64-lp64d --version stable-2025.08-1 --install-dir /opt/riscv-lab
 
-  # Default setup for nasm and x86_64:
+  # Default setup for nasm and amd64:
   sudo $0
 
   # Force reinstallation:
   sudo $0 --tag s390x --force
 USG
+}
+
+APT_MISSING=()
+PACMAN_MISSING=()
+DNF_MISSING=()
+YUM_MISSING=()
+check_tool() {
+    local binary="$1"
+    local apt_pkg="$2"
+    local pac_pkg="$3"
+    local dnf_pkg="$4"
+    if ! command -v "$binary" >/dev/null 2>&1; then
+        [ -n "$apt_pkg" ] && APT_MISSING+=("$apt_pkg")
+        [ -n "$pac_pkg" ] && PACMAN_MISSING+=("$pac_pkg")
+        [ -n "$dnf_pkg" ] && DNF_MISSING+=("$dnf_pkg")
+        [ -n "$dnf_pkg" ] && YUM_MISSING+=("$dnf_pkg")
+    fi
+}
+
+install_missing_packages() {
+    if command -v apt-get >/dev/null 2>&1; then
+        if [ ${#APT_MISSING[@]} -gt 0 ]; then
+            echo -e "${CYAN}>>> Installing missing packages via APT: ${APT_MISSING[*]}${NC}"
+            apt-get update -y && apt-get install -y "${APT_MISSING[@]}"
+        fi
+    elif command -v pacman >/dev/null 2>&1; then
+        if [ ${#PACMAN_MISSING[@]} -gt 0 ]; then
+            echo -e "${CYAN}>>> Installing missing packages via Pacman: ${PACMAN_MISSING[*]}${NC}"
+            pacman -Sy --noconfirm --needed "${PACMAN_MISSING[@]}"
+        fi
+    elif command -v dnf >/dev/null 2>&1; then
+        if [ ${#DNF_MISSING[@]} -gt 0 ]; then
+            echo -e "${CYAN}>>> Installing missing packages via DNF: ${DNF_MISSING[*]}${NC}"
+            dnf install -y "${DNF_MISSING[@]}"
+        fi
+    elif command -v yum >/dev/null 2>&1; then
+        if [ ${#YUM_MISSING[@]} -gt 0 ]; then
+            echo -e "${CYAN}>>> Installing missing packages via YUM: ${YUM_MISSING[*]}${NC}"
+            yum install -y "${YUM_MISSING[@]}"
+        fi
+    else
+        echo -e "${YLW}Warning: Could not detect package manager. Please manually install missing tools.${NC}"
+    fi
 }
 
 # Parse args
@@ -106,16 +150,28 @@ fi
 # Supported architectures registry: tag:TARGET_ARCH:ARCH_ABBREV:ARCH_ABBREV_UPPER:INSTALL_DIR
 # Add or remove entries as needed. Users can pass --tag <tag> to pick one.
 SUPPORTED_ARCHS=(
-    "mips:mips32el:mips:MIPS:/opt/mips-lab"
+    "amd64:amd64:amd64:AMD64:/opt/amd64-lab"
+    "mips:mips32el:mipsel:MIPS:/opt/mips-lab"
     "s390x:s390x-z13:s390x:S390x:/opt/s390x-lab"
     "aarch64:aarch64:aarch64:AARCH64:/opt/arm64-lab"
-    "armv7:armv7-eabihf:armv7:ARM-v7:/opt/armv7-lab"
+    "armv7:armv7-eabihf:arm:ARM-v7:/opt/armv7-lab"
     "riscv64:riscv64-lp64d:riscv64:RISC-V:/opt/riscv-lab"
     "i386:x86-core2:i386:x86-32bit:/opt/i386-lab"
 )
 
 # If a tag was provided, try to resolve it
 if [ -n "${TAG}" ]; then
+    # Normalize some common aliases (allow mipsel, x86_64, arm, x86, etc.)
+    case "${TAG,,}" in
+        mipsel|mips32el|mips) TAG="mips" ;;
+        amd64|x86_64) TAG="amd64" ;;
+        arm|armv7|armv7-eabihf) TAG="armv7" ;;
+        i386|x86|i86pc) TAG="i386" ;;
+        aarch64|arm64) TAG="aarch64" ;;
+        riscv|riscv64) TAG="riscv64" ;;
+        s390x|s390) TAG="s390x" ;;
+        *) ;;
+    esac
     found=0
     OLDIFS=$IFS; IFS=':'
     for entry in "${SUPPORTED_ARCHS[@]}"; do
@@ -150,46 +206,50 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# If Target Arch is empty yet
-if [ -z "$TARGET_ARCH" ]; then
-    echo -e "${CYAN}>>> No arguments provided. Defaulting to setup for nasm and x86_64.${NC}"
-    TAG="x86_64"
-    TARGET_ARCH="x86_64"
-    ARCH_ABBREV="x86_64"
-    ARCH_ABBREV_UPPER="X86_64"
-    INSTALL_DIR="/opt/x86_64-lab"
-
-    # Install essential system dependencies for nasm and x86_64
-    echo -e "${CYAN}>>> Installing nasm and essential build tools...${NC}"
-    if command -v apt-get >/dev/null 2>&1; then
-        apt-get update -y && apt-get install -y nasm build-essential || true
-    elif command -v pacman >/dev/null 2>&1; then
-        pacman -Sy --needed --noconfirm nasm base-devel || true
-    elif command -v dnf >/dev/null 2>&1; then
-        dnf install -y nasm gcc make || true
-    elif command -v yum >/dev/null 2>&1; then
-        yum install -y nasm gcc make || true
-    else
-        echo -e "${YLW}Warning: Couldn't auto-install packages. Please ensure nasm and build tools are available.${NC}"
-    fi
-
-    echo -e "${GREEN}>>> Default setup for nasm and x86_64 complete.${NC}"
+# If Target Arch is empty or amd64
+if [ -z "$TARGET_ARCH" ] || [ "$TARGET_ARCH" = "amd64" ] || [ "$TARGET_ARCH" = "x86_64" ]; then
+    echo -e "${CYAN}>>> No arguments provided. Checking dependencies for nasm and amd64...${NC}"
+    TAG="amd64"
+    TARGET_ARCH="amd64"
+    ARCH_ABBREV="amd64"
+    ARCH_ABBREV_UPPER="AMD64"
+    INSTALL_DIR=""
+    # Reset lists
+    APT_MISSING=()
+    PACMAN_MISSING=()
+    DNF_MISSING=()
+    YUM_MISSING=()
+    # Check for tools specific to Native build
+    # Format: check_tool "binary" "apt" "pacman" "dnf"
+    check_tool "nasm" "nasm" "nasm" "nasm"
+    check_tool "make" "build-essential" "base-devel" "make"
+    check_tool "gcc"  "build-essential" "base-devel" "gcc"
+    # Run Installation
+    install_missing_packages
+    echo -e "${GREEN}>>> Setup for nasm and amd64 environment checked/completed.${NC}"
     exit 0
 fi
 
-# Install dependencies (best-effort)
-echo -e "${CYAN}>>> Installing system dependencies (qemu-user, gdb, xz, wget/curl)...${NC}"
-if command -v apt-get >/dev/null 2>&1; then
-    apt-get update -y && apt-get install -y qemu-user gdb-multiarch make wget curl xz-utils file || true
-elif command -v pacman >/dev/null 2>&1; then
-    pacman -Sy --needed --noconfirm qemu-user gdb make wget curl xz file || true
-elif command -v dnf >/dev/null 2>&1; then
-    dnf install -y qemu-user gdb make wget curl xz file || true
-elif command -v yum >/dev/null 2>&1; then
-    yum install -y qemu-user gdb make wget curl xz file || true
-else
-    echo -e "${YLW}Warning: Couldn't auto-install packages. Please ensure qemu-user, gdb and xz are available.${NC}"
-fi
+echo -e "${CYAN}>>> Checking system dependencies for Cross-Arch...${NC}"
+# Reset lists just in case
+APT_MISSING=()
+PACMAN_MISSING=()
+DNF_MISSING=()
+YUM_MISSING=()
+# Check for tools specific to Cross build
+check_tool "make" "make" "make" "make"
+check_tool "wget" "wget" "wget" "wget"
+check_tool "curl" "curl" "curl" "curl"
+check_tool "xz"   "xz-utils" "xz" "xz"
+check_tool "file" "file" "file" "file"
+# Check for GDB
+# Ubuntu uses gdb-multiarch, Arch/Fedora usually include multiarch support in standard gdb
+check_tool "gdb-multiarch" "gdb-multiarch" "gdb" "gdb"
+# Check for QEMU User
+check_tool "qemu-${ARCH_ABBREV}" "qemu-user" "qemu-user" "qemu-user"
+# Run Installation
+install_missing_packages
+echo -e "${GREEN}>>> System dependencies checked/completed.${NC}"
 
 # Idempotent install: skip unless FORCE
 echo 
@@ -249,17 +309,18 @@ $( [ -n "$SYSROOT_PATH" ] && echo "export QEMU_LD_PREFIX=\"$SYSROOT_PATH\"" )
 echo 
 echo -e "${MGN}>>> Setting QEMU_LD_PREFIX to: ${BOLD}\$QEMU_LD_PREFIX${NC}"
 echo -e "${GREEN}${BOLD}>>> ${ARCH_ABBREV_UPPER} Environment (${TARGET_ARCH}) Activated!${NC}"
-echo -e "${CYAN}>>> You can now use ${BOLD}${ARCH_ABBREV}-gcc, ${ARCH_ABBREV}-as, ${ARCH_ABBREV}-gdb, etc.${NC}"
+echo -e "${CYAN}>>> You can now use ${BOLD}lab-gcc, lab-as, lab-gdb, lab-run, lab-build, lab-debug etc.${NC}"
 echo 
 # Convenience helper: prefixed tools (if present)
 _TC_DIR="$INSTALL_DIR/bin"
 for _TOOL in gcc as g++ ld objdump readelf strip gdb ar; do
-	_bin="\$(find $INSTALL_DIR/bin -name "*-linux-\${_TOOL}" | head -n 1)"
+    _bin="\$(find $INSTALL_DIR/bin -name "*-linux-\${_TOOL}" | head -n 1)"
     if [ -z "\$_bin" ]; then
         echo -e "${YLW}Warning: Could not find \${_TOOL} in the toolchain. ${NC}"
     fi
-    alias ${ARCH_ABBREV}-\${_TOOL}="\$_bin"
+    alias lab-\${_TOOL}="\$_bin"
 done
+alias lab-run="qemu-${ARCH_ABBREV} -L \$QEMU_LD_PREFIX"
 EOL
 chmod +x "$ACTIVATE_FILE"
 
