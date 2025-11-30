@@ -146,9 +146,9 @@ if [ -z "$TAG" ]; then
     done
     
     if [[ -n "${EXEC_ARGS_ESC}" ]]; then
-        RUNNER_CMD="gdbserver localhost:$FINAL_PORT ./$EXECUTABLE$EXEC_ARGS_ESC"
+        RUNNER_CMD="gdbserver localhost:$FINAL_PORT $TARGET_BIN$EXEC_ARGS_ESC"
     else 
-        RUNNER_CMD="gdbserver localhost:$FINAL_PORT ./$EXECUTABLE"
+        RUNNER_CMD="gdbserver localhost:$FINAL_PORT $TARGET_BIN"
     fi
 
 	GDB_BIN="gdb"
@@ -169,9 +169,9 @@ else
     done
 
     if [[ -n "${EXEC_ARGS_ESC}" ]]; then
-        RUNNER_CMD="QEMU_LD_PREFIX=\"$QEMU_LD_PREFIX\" $QEMU_BIN -g $FINAL_PORT ./$EXECUTABLE$EXEC_ARGS_ESC"
+        RUNNER_CMD="QEMU_LD_PREFIX=\"$QEMU_LD_PREFIX\" $QEMU_BIN -g $FINAL_PORT $TARGET_BIN$EXEC_ARGS_ESC"
     else 
-        RUNNER_CMD="QEMU_LD_PREFIX=\"$QEMU_LD_PREFIX\" $QEMU_BIN -g $FINAL_PORT ./$EXECUTABLE"
+        RUNNER_CMD="QEMU_LD_PREFIX=\"$QEMU_LD_PREFIX\" $QEMU_BIN -g $FINAL_PORT $TARGET_BIN"
     fi
 
 	GDB_BIN=$(find "/opt/${TAG}-lab/bin" -name "*-linux-gdb" | head -n 1)
