@@ -64,6 +64,6 @@ done
 
 echo -e "${GREEN}>>> Installation Complete!${NC}"
 echo -e "Next Steps:"
-echo -e "  1. Activate architecture:  ${BLUE}source lab-activate mips${NC}"
+echo -e "  1. Activate architecture:  ${CYAN}source lab-activate mips${NC}"
 echo -e "  2. Build code:             ${CYAN}lab-build main.S -o main${NC}"
-echo -e "  3. Debug code:             ${BLUE}lab-debug ./main${NC}"
+echo -e "  3. Debug code:             ${CYAN}lab-debug ./main${NC}"
