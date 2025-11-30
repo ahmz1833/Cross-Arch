@@ -75,14 +75,21 @@ RUN ACTIVATE_SCRIPT="/opt/${LAB_ARCH}-lab/activate"; \
             echo "export PATH=$NEW_PATH:\$PATH" >> /root/.bashrc; \
         fi; \
         grep "export QEMU_LD_PREFIX" "$ACTIVATE_SCRIPT" >> /etc/profile; \
-        grep "^alias lab-" "$ACTIVATE_SCRIPT" | while read -r line; do \
-            CMD_NAME=$(echo "$line" | cut -d'=' -f1 | cut -d' ' -f2); \
-            REAL_CMD=$(echo "$line" | cut -d'=' -f2 | tr -d '"' | tr -d "'"); \
-            echo ">>> Creating wrapper for $CMD_NAME -> $REAL_CMD"; \
-            echo "#!/bin/bash" > "/usr/local/bin/$CMD_NAME"; \
-            echo "exec $REAL_CMD \"\$@\"" >> "/usr/local/bin/$CMD_NAME"; \
-            chmod +x "/usr/local/bin/$CMD_NAME"; \
+        for _tool in gcc as g++ ld objdump readelf strip ar; do \
+            _bin=$(find /opt/${LAB_ARCH}-lab/bin -name "*-linux-${_tool}" | head -n 1); \
+            if [ -n "$_bin" ]; then \
+                echo "Creating wrapper for lab-$_tool -> $_bin"; \
+                echo "#!/bin/bash" > "/usr/local/bin/lab-$_tool"; \
+                echo "exec $_bin \"\$@\"" >> "/usr/local/bin/lab-$_tool"; \
+                chmod +x "/usr/local/bin/lab-$_tool"; \
+            fi; \
         done; \
+        echo "Creating lab-run wrapper"; \
+        echo '#!/bin/bash' > /usr/local/bin/lab-run; \
+        grep "alias lab-run=" "$ACTIVATE_SCRIPT" | sed 's/alias lab-run=//; s/^"/exec /; s/"$/\ "$@"/' >> /usr/local/bin/lab-run; \
+        chmod +x /usr/local/bin/lab-run; \
+    else \
+        echo "Activation script not found: $ACTIVATE_SCRIPT"; \
     fi
 
 # Finalize entrypoint to load profiles and switch to non-root user
