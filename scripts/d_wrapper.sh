@@ -5,6 +5,7 @@ set -e
 ## By AHMZ - November 2025
 ## It mounts the relevant host paths into the container (using common ancestor)
 ## (It requires LAB_ARCH to be set, and identifies command by ${0##*/})
+## Usage with ln -sf /usr/local/bin/__lab_wrapper to desired command names
 ## ==============================================================================
 
 # --- 1. Check Environment Variable ---

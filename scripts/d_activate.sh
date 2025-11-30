@@ -31,6 +31,47 @@ fi
 # Set the variable
 export LAB_ARCH="$TARGET"
 
+# Attempt to pull a matching Docker image for this architecture.
+# Behavior:
+# - If `LAB_IMAGE` environment variable is set, try that exact image first.
+# - Otherwise try a short list of common image-name candidates.
+# - If `docker` is not available or all pulls fail, abort with an error.
+if command -v docker &> /dev/null; then
+    # Candidate images to try (in order). Users may override with LAB_IMAGE.
+    if [ -n "${LAB_IMAGE:-}" ]; then
+        CANDIDATES=("$LAB_IMAGE")
+    else
+        CANDIDATES=(
+            "ghcr.io/ahmz1833/cross-arch:${LAB_ARCH}"
+            "cross-arch:${LAB_ARCH}"
+        )
+    fi
+
+    PULLED_IMAGE=""
+    for img in "${CANDIDATES[@]}"; do
+        echo ">>> Pulling Docker image: $img"
+        if docker pull "$img"; then
+            PULLED_IMAGE="$img"
+            echo ">>> Successfully pulled: $img"
+            break
+        else
+            echo "--- Failed to pull: $img -- trying next candidate if any"
+        fi
+    done
+
+    if [ -z "$PULLED_IMAGE" ]; then
+        echo "[ERROR] Could not pull any Cross-Arch Docker image for architecture: $LAB_ARCH"
+        echo "Tried: ${CANDIDATES[*]}"
+        return 1 2>/dev/null || exit 1
+    fi
+
+    # Export the successfully pulled image for downstream wrappers to reuse.
+    export LAB_DOCKER_IMAGE="$PULLED_IMAGE"
+else
+    echo "[ERROR] 'docker' command not found. Install Docker to use Docker-mode activation."
+    return 1 2>/dev/null || exit 1
+fi
+
 # Ensure wrapper script installed
 if ! command -v __lab_wrapper &> /dev/null; then
 	echo "Error: Wrapper script '__lab_wrapper' not found."

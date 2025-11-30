@@ -244,7 +244,7 @@ check_tool "xz"   "xz-utils" "xz" "xz"
 check_tool "file" "file" "file" "file"
 # Check for GDB
 # Ubuntu uses gdb-multiarch, Arch/Fedora usually include multiarch support in standard gdb
-check_tool "gdb-multiarch" "gdb-multiarch" "gdb" "gdb"
+check_tool "gdb" "gdb-multiarch" "gdb" "gdb"
 # Check for QEMU User
 check_tool "qemu-${ARCH_ABBREV}" "qemu-user" "qemu-user" "qemu-user"
 # Run Installation

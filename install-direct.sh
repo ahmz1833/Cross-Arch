@@ -19,7 +19,7 @@ echo -e "${BLUE}>>> Cross-Arch Lab Installer (Native Mode)${NC}"
 # 1. Check Root
 if [ "$EUID" -ne 0 ]; then
   echo -e "${RED}Error: Please run as root (or use sudo).${NC}"
-  echo "Example: curl -sL ... | sudo bash"
+  echo -e "Example: ${CYAN}curl -sL ... | sudo bash${NC}"
   exit 1
 fi
 
