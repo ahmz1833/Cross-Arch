@@ -2,11 +2,11 @@
 
 The **Cross-Arch** repository is a comprehensive, unified environment designed for **Computer Structure and Assembly Language** courses. It provides a seamless toolchain (GCC, GDB, QEMU) to compile, run, and debug assembly code across multiple architectures without leaving your terminal.
 
-This repository also have useful examples and rich documents related to each architecture (*This part is under construction!*)
+This repository also has useful examples and rich documents related to each architecture (*This part is under construction!*)
 
 ### 🚀 Supported Architectures
 
-This repository now support 7 architectures, with a primary focus on the syllabus standards:
+This repository now supports 7 architectures, with a primary focus on the syllabus standards:
 
 - **[MIPS32 (Little Endian)](archs/mipsel/)** `mips` - *Core Syllabus of RISC systems*
 - **[AMD64 (x86_64)](archs/amd64/)** `amd64` - *Core Syllabus of CISC systems*
@@ -50,6 +50,8 @@ You have two options:
 *Best for: Linux, Windows (WSL2), macOS (via UTM)*
 
 This installs the management scripts to `/usr/local/bin` and clones the repo to `/opt/cross-arch`. It does **not** install the heavy toolchains immediately; you download them **on demand**.
+
+> **Note:** We use the high-quality, pre-built toolchains provided by [Bootlin](https://toolchains.bootlin.com/). These ensure stability and compatibility across all supported architectures.
 
 1. **Run the Installer:**
    
@@ -203,7 +205,7 @@ If you are starting, here is the recommended path:
 
 ## Architecture Specific Notes and References
 
-You can explore in the `archs/` directory for architecture-specific notes, references, and examples. Also there is links to those in the [top](#-supported-architectures) of this README.
+You can explore in the `archs/` directory for architecture-specific notes, references, and examples. Also there are links to those in the [top](#-supported-architectures) of this README.
 
 Each architecture folder contains:
 - `README.md`: Architecture overview and specifics.
@@ -211,11 +213,28 @@ Each architecture folder contains:
 - `docs/`: Some of useful documents and references.
 - Something else...
 
+## Judge System
+
+The `judge/` directory contains tools for static analysis of assembly code. The core script `analyze.py` can parse objdump outputs to extract function call graphs, detect syscalls, and list used instructions. This is useful for automated grading or verifying code structure without running it.
+
+Check [judge/README.md](judge/README.md) for more details.
+
 ## Will be added
 
 - Architectures references, and samples
-- Judge handling for each of architectures
+- Judge handling for each architecture
 - ...
+
+## 📚 Sources & Resources
+
+Here are some helpful documents, links, and resources useful for students:
+
+- **[Compiler Explorer (Godbolt)](https://godbolt.org/)**: An interactive online compiler that shows the assembly output of your C/C++ code in real-time.
+- **[Calling Conventions (Wikipedia)](https://en.wikipedia.org/wiki/Calling_convention)**: Understanding how functions receive parameters and return values is crucial in assembly.
+- **[GNU Assembler (GAS) Documentation](https://sourceware.org/binutils/docs/as/)**: The official manual for the assembler used in this lab.
+- **[Linux Syscall Table](https://gpages.juszkiewicz.com.pl/syscalls-table/syscalls.html)**: A comprehensive table of system calls for various architectures.
+- **[Linux Syscall Man Page](https://man7.org/linux/man-pages/man2/syscall.2.html)**: Official documentation on how to invoke system calls.
+- **[Linux Assembly HOWTO](https://tldp.org/HOWTO/Assembly-HOWTO/)**: A classic guide to writing assembly on Linux.
 
 ## License
 
