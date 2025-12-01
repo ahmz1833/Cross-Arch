@@ -8,13 +8,13 @@ This repository also have useful examples and rich documents related to each arc
 
 This repository now support 7 architectures, with a primary focus on the syllabus standards:
 
-- **MIPS32 (Little Endian)** `mips` - *Core Syllabus of RISC systems*
-- **AMD64 (x86_64)** `amd64` - *Core Syllabus of CISC systems*
-- **IBM s390x (Z13)** `s390x` - *Core Syllabus (Mainframe)*
-- **RISC-V (64-bit)** `riscv64` - *An open source and flexible architecture*
-- **ARMv7 (32-bit)** `armv7` - *A good example for addressing modes*
-- **AArch64 (ARM 64-bit)** `aarch64` - *Up-to-date RISC systems use it*
-- **i386 (x86 32-bit)** `i386` - *Predecessor of AMD64 architecture*
+- **[MIPS32 (Little Endian)](archs/mipsel/)** `mips` - *Core Syllabus of RISC systems*
+- **[AMD64 (x86_64)](archs/amd64/)** `amd64` - *Core Syllabus of CISC systems*
+- **[IBM s390x (Z13)](archs/s390x/)** `s390x` - *Core Syllabus (Mainframe)*
+- **[RISC-V (64-bit)](archs/riscv64/)** `riscv64` - *An open source and flexible architecture*
+- **[ARMv7 (32-bit)](archs/armv7/)** `armv7` - *A good example for addressing modes*
+- **[AArch64 (ARM 64-bit)](archs/aarch64/)** `aarch64` - *Up-to-date RISC systems use it*
+- **[i386 (x86 32-bit)](archs/i386/)** `i386` - *Predecessor of AMD64 architecture*
 
 ---
 
@@ -178,6 +178,38 @@ docker rmi ghcr.io/ahmz1833/cross-arch:mips
 # Remove all cross-arch images
 docker images | grep cross-arch | awk '{print $3}' | xargs docker rmi
 ```
+
+## 🎓 Learning Guide
+
+If you are starting, here is the recommended path:
+
+1. **From MARS to GCC (MIPS Users)**
+
+   If you are coming from the MARS Simulator, things work slightly differently here.
+
+   - **MARS**: You run code directly.
+
+   - **Here**: You Assemble + Link then Run (Linux Emulation).
+
+   Navigate to `archs/mipsel/examples_mars`. These are example assembly codes which run in the **MARS simulator**. Then, you can navigate to `archs/mispel/examples` to see how standard MARS code is adapted for the **GNU Assembler** (gas).
+
+2. **Baremetal vs. Libc (AMD64 Users)**
+
+   Inside `archs/amd64/examples`, you will find two categories:
+
+   - **libc**: Uses standard C library functions (like printf, exit). Easier to write but requires the OS.
+
+   - **baremetal**: Pure assembly using Linux Syscalls (syscall). Closer to the hardware, no libraries attached.
+
+## Architecture Specific Notes and References
+
+You can explore in the `archs/` directory for architecture-specific notes, references, and examples. Also there is links to those in the [top](#-supported-architectures) of this README.
+
+Each architecture folder contains:
+- `README.md`: Architecture overview and specifics.
+- `examples/`: Sample assembly programs for that architecture.
+- `docs/`: Some of useful documents and references.
+- Something else...
 
 ## Will be added
 
