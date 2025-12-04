@@ -82,10 +82,14 @@ trap cleanup EXIT
 # Execute
 # --init: Ensures proper signal handling (e.g. segfaults) and zombie reaping
 # --cidfile: Tracks container ID for robust cleanup
-docker run -it --rm \
-    --init \
-    --cidfile "$CID_FILE" \
-    --platform linux/amd64 \
+
+# Determine flags: Always interactive (-i), but TTY (-t) only if connected to a terminal
+DOCKER_FLAGS=(-i --rm --init --cidfile "$CID_FILE" --platform linux/amd64)
+if [ -t 0 ]; then
+    DOCKER_FLAGS+=(-t)
+fi
+
+docker run "${DOCKER_FLAGS[@]}" \
     -u "$(id -u):$(id -g)" \
     -v "$HOST_MOUNT_ROOT:$CONTAINER_MOUNT_POINT" \
     -w "$CONTAINER_MOUNT_POINT" \
