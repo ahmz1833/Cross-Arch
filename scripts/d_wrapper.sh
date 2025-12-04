@@ -65,8 +65,26 @@ done
 
 CMD_STRING="$CMD_NAME ${NEW_ARGS[*]}"
 
+# Cleanup mechanism to ensure container is removed even if it hangs or script is killed
+CID_FILE="/tmp/cross-arch-lab-$$.cid"
+cleanup() {
+    if [ -f "$CID_FILE" ]; then
+        local cid
+        cid=$(cat "$CID_FILE")
+        if [ -n "$cid" ]; then
+            docker rm -f "$cid" >/dev/null 2>&1
+        fi
+        rm -f "$CID_FILE"
+    fi
+}
+trap cleanup EXIT
+
 # Execute
-exec docker run -it --rm \
+# --init: Ensures proper signal handling (e.g. segfaults) and zombie reaping
+# --cidfile: Tracks container ID for robust cleanup
+docker run -it --rm \
+    --init \
+    --cidfile "$CID_FILE" \
     --platform linux/amd64 \
     -u "$(id -u):$(id -g)" \
     -v "$HOST_MOUNT_ROOT:$CONTAINER_MOUNT_POINT" \
