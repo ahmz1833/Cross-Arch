@@ -41,7 +41,32 @@ else
     git clone "$REPO_URL" "$INSTALL_DIR"
 fi
 
-# 4. Install Wrappers
+# 4. Ensure BIN_DIR is in PATH
+if ! echo "$PATH" | grep -q "$BIN_DIR"; then
+    echo -e "${YLW}>>> $BIN_DIR is not in PATH. Adding to shell config...${NC}"
+    SHELL_RC=""
+    if [ -n "$SUDO_USER" ]; then
+        USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+    else
+        USER_HOME="$HOME"
+    fi
+    
+    if [ -f "$USER_HOME/.zshrc" ]; then
+        SHELL_RC="$USER_HOME/.zshrc"
+    elif [ -f "$USER_HOME/.bashrc" ]; then
+        SHELL_RC="$USER_HOME/.bashrc"
+    fi
+    
+    if [ -n "$SHELL_RC" ]; then
+        if ! grep -q "export PATH=.*$BIN_DIR" "$SHELL_RC" 2>/dev/null; then
+            echo "export PATH=\"$BIN_DIR:\$PATH\"" >> "$SHELL_RC"
+            echo -e "${GREEN}Added $BIN_DIR to $SHELL_RC${NC}"
+            echo -e "${YLW}Note: Run 'source $SHELL_RC' or restart your terminal.${NC}"
+        fi
+    fi
+fi
+
+# 5. Install Wrappers
 echo -e "${BLUE}>>> Configuring Docker Wrappers in $BIN_DIR...${NC}"
 
 # Install the config manager
@@ -58,7 +83,7 @@ LAB_COMMANDS=("ar" "as" "build" "debug" "g++" "gcc" "ld" "objdump" "readelf" "ru
 for cmd in "${LAB_COMMANDS[@]}"; do
 	if ! command -v "lab-$cmd" &> /dev/null; then
 		echo "Installing lab-$cmd command..."
-		ln -sf "$(command -v __lab_wrapper)" "/usr/local/bin/lab-$cmd"
+		ln -sf "$BIN_DIR/__lab_wrapper" "/usr/local/bin/lab-$cmd"
 	fi
 done
 
