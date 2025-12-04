@@ -122,10 +122,20 @@ OLD_TAG="${LAB_ARCH:-}" # Save old tag to remove from prompt if resetting
 # A. Source Mode (Modifies CURRENT Shell) - Only Bash/Zsh
 if is_sourced; then
     if [[ "$TAG" =~ ^(native|amd64|x86_64)$ ]]; then
-        unset LAB_ARCH
+        unset LAB_ARCH LAB_DIR 2>/dev/null
+
+        # Clear aliases and functions if any
+        LAB_COMMANDS=("ar" "as" "g++" "gcc" "ld" "objdump" "readelf" "strip")
+        for cmd in "${LAB_COMMANDS[@]}"; do
+            unalias "lab-$cmd" 2>/dev/null
+            unset -f "lab-$cmd" 2>/dev/null
+            alias "lab-$cmd"=$cmd 2>/dev/null
+        done
+        alias lab-run="env PATH=.:$PATH" 2>/dev/null
+
         # Try to clean prompt (Best effort)
         [ -n "$BASH_VERSION" ] && export PS1="${PS1//($OLD_TAG-lab)/}"
-        echo "Environment reset."
+        echo "Environment reset to native (amd64)."
         return 0
     fi
 
