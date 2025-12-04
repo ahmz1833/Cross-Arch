@@ -261,8 +261,8 @@ apply_arch_defaults() {
     case "$tag" in
         mips)
             # MIPS32 Release 2, Little Endian, 32-bit ABI
-            ARCH_CFLAGS=(-march=mips32r2 -EL -mabi=32)
-            ARCH_ASFLAGS=(-EL)
+            ARCH_CFLAGS=(-march=mips32r2 -EL -mabi=32 -Wa,-W -Wl,--no-warn-mismatch -fno-pic -mno-abicalls)
+            ARCH_ASFLAGS=(-march=mips32r2 -EL)
             ARCH_LDFLAGS=(-EL)
             ;;
         s390x)
@@ -281,7 +281,7 @@ apply_arch_defaults() {
             # RISC-V 64-bit General Purpose
             ARCH_CFLAGS=(-march=rv64gc -mabi=lp64d)
             ;;
-        i386)
+        i386|x86)
             # x86 32-bit
             ARCH_CFLAGS=(-m32)
             ARCH_ASFLAGS=(--32)
@@ -289,7 +289,7 @@ apply_arch_defaults() {
             ARCH_NASMFLAGS=(-f elf32)
             ARCH_LDFLAGS=(-m elf_i386) # Hint for raw ld
             ;;
-        native|"")
+        native|amd64|x86_64|"")
             # Native (assumed x86_64 linux)
             # NASM: 64-bit ELF output
             ARCH_NASMFLAGS=(-f elf64)
@@ -318,10 +318,14 @@ split_asm_args() {
         # Handle arguments with values (e.g., -I /path)
         if [[ -n "$pending" ]]; then
             local value="$arg"
-            if [[ "$pending" == "-I" || "$pending" == "-i" ]]; then
-                value=$(ensure_trailing_slash "$value")
+            if [[ "$pending" == "-o" ]]; then
+                _linkargs+=("-o" "$value")
+            else
+                if [[ "$pending" == "-I" || "$pending" == "-i" ]]; then
+                    value=$(ensure_trailing_slash "$value")
+                fi
+                _asmflags+=("${pending}${value}")
             fi
-            _asmflags+=("${pending}${value}")
             pending=""
             continue
         fi
@@ -435,7 +439,7 @@ run_asm_mode() {
     trap - EXIT
 }
 
-# Mode: Nasm
+# Mode: Nasm 
 # Driver: nasm + ld
 # Use Case: Pure Intel syntax assembly without libc.
 run_nasm_mode() {
@@ -444,8 +448,8 @@ run_nasm_mode() {
     local -a asm_sources=()
     local -a asm_flags=()
     local -a link_args=()
-    split_asm_args asm_sources asm_flags link_args ".asm" ".ASM"
-    [[ ${#asm_sources[@]} -gt 0 ]] || die "NASM mode expects at least one .asm file."
+    split_asm_args asm_sources asm_flags link_args ".asm" ".ASM" ".s" ".S"
+    [[ ${#asm_sources[@]} -gt 0 ]] || die "NASM mode expects at least one .asm/.s file."
 
     local tmpdir
     tmpdir=$(mktemp -d)
@@ -489,8 +493,8 @@ run_nasm_gcc_mode() {
     local -a asm_sources=()
     local -a asm_flags=()
     local -a link_args=()
-    split_asm_args asm_sources asm_flags link_args ".asm" ".ASM"
-    [[ ${#asm_sources[@]} -gt 0 ]] || die "NASM-GCC mode expects at least one .asm file."
+    split_asm_args asm_sources asm_flags link_args ".asm" ".ASM" ".s" ".S"
+    [[ ${#asm_sources[@]} -gt 0 ]] || die "NASM-GCC mode expects at least one .asm/.s file."
 
     local tmpdir
     tmpdir=$(mktemp -d)
@@ -535,10 +539,10 @@ main() {
     # Parse CLI Arguments
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -T|--tag)
+            -T|-t|--tag)
                 [[ $# -ge 2 ]] || die "--tag requires an argument"
                 cli_tag="$2"; shift 2;;
-            -M|--mode)
+            -M|-m|--mode)
                 [[ $# -ge 2 ]] || die "--mode requires an argument"
                 mode="$2"; shift 2;;
             --list-tags)
