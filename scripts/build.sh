@@ -562,11 +562,11 @@ main() {
 
     # Normalize Mode Strings
     case "$mode" in
-        asm|assemble)
+        asm|assemble|nolibc)
             mode="asm";;
-        compile|c|default)
+        compile|c|default|libc)
             mode="compile";;
-        nasm|native-asm)
+        nasm|native-asm|nasm-nolibc)
             mode="nasm";;
         nasm-gcc|nasm-libc|native-nasm-gcc)
             mode="nasm-gcc";;

@@ -1,0 +1,42 @@
+# Object files
+*.o
+*.obj
+
+# Libraries
+*.a
+*.so
+*.dylib
+*.dll
+
+# Executables and binaries
+*.exe
+*.out
+*.app
+*.elf
+*.bin
+*.hex
+
+# Common output names in labs
+main
+hello
+test
+a.out
+
+# Disassembly dumps
+*.dump
+*.dis
+
+# Python
+__pycache__/
+*.pyc
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Temporary files
+tmp/
+temp/
