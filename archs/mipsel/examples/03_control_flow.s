@@ -20,15 +20,15 @@ msg_done:   .asciiz "Done!\n"
 .globl __start
 
 __start:
-	call main
-	move $a0, $v0
-	sys_exit
+    call main
+    move $a0, $v0
+    sys_exit
 
 # -----------------------------------------------------------------------------
 # Function: main
 # -----------------------------------------------------------------------------
 main:
-	enter
+    enter
 
     # Print start message
     print_str msg_start
@@ -65,6 +65,6 @@ loop_continue:
 loop_end:
     print_str msg_done
     
-	leave
+    leave
     li      $v0, 0
-	ret
+    ret

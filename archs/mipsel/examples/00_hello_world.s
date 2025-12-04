@@ -23,5 +23,5 @@ __start:
     print_str msg
 
     # 2. Exit with status 0
-	li $a0, 0
+    li $a0, 0
     sys_exit

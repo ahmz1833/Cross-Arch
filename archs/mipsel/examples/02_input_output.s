@@ -24,9 +24,9 @@
 .globl __start
 
 __start:
-	call main
-	move $a0, $v0
-	sys_exit
+    call main
+    move $a0, $v0
+    sys_exit
 
 main:
     enter

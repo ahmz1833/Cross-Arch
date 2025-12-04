@@ -77,8 +77,8 @@ __start:
 
     # Write content to STDOUT
     # sys_write(STDOUT, buffer, bytes_read)
-	la $a0, buffer
-	print_str   $a0
+    la $a0, buffer
+    print_str   $a0
 
     # Close file
     sys_close   $s0
@@ -89,7 +89,7 @@ error_write:
     print_str   msg_err_write
     li          $a0, 1
     b           do_exit
-	
+    
 error_read:
     print_str   msg_err_read
     li          $a0, 1
