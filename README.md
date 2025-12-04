@@ -72,6 +72,8 @@ This installs the management scripts to `/usr/local/bin` and clones the repo to 
    # mips - amd64 - s390x - armv7 - aarch64 - riscv64 - i386
    ```
 
+**Note: For Updating the Toolchain scripts, you can use the install script in 1.**
+
 ### Method B: Docker Installation
 
 *Best for: macOS (Standard) - Also maybe used for Linux*
@@ -95,6 +97,13 @@ This installs wrapper scripts that transparently forward your commands to optimi
    
    *(Note: This will automatically pull the necessary Docker image if it's not present. Note that each image download consumes about **200 MB** of your Internet traffic.)*
 
+**Note: For Updating the Toolchain scripts, YOU MUST PULL MANUALLY THE DOCKER IMAGES YOU WANT TO UPDATE.**
+
+For example, to update the MIPS toolchain, you can run:
+```bash
+docker pull ghcr.io/ahmz1833/cross-arch:mips
+```
+
 ------
 
 ## 🛠 Usage
@@ -116,10 +125,25 @@ You can use the standard GNU tools prefixed with `lab-` (which map to the correc
 
 ```bash
 # Compile a C file
-lab-gcc main.c -o main
+lab-build main.c -o main
 
-# Run it (via QEMU)
+# Assemble an assembly file (with libc)
+lab-build main.S -o main
+
+# Assemble an Assembly file (without libc)
+lab-build -m asm main.S -o main
+
+# Assemble a x86 - amd64 NASM file (without libc)
+lab-build -m nasm main.asm -o main
+
+# Assemble a x86 - amd64 NASM file (with libc)
+lab-build -m nasm-gcc main.asm -o main
+
+# Run the binary with appropriate emulator
 lab-run ./main
+
+# Run amd64 binary natively (NOT ON MAC-OS!)
+./main
 ```
 
 ### Debug
@@ -153,7 +177,7 @@ If you wish to remove the lab environment, follow these steps.
 Removes the helper scripts (`lab-gcc`, `lab-debug`, etc.) and the core repository.
 
 ```bash
-sudo rm -f /usr/local/bin/lab-* /usr/local/bin/asmlab-*
+sudo rm -f /usr/local/bin/lab-* /usr/local/bin/__lab_*
 sudo rm -rf /opt/cross-arch
 ```
 
@@ -256,6 +280,8 @@ section accordingly.
 ## Special Thanks
 
 Soon
+
+https://www.ctfrecipes.com/pwn/architectures/
 
 <!-- - **Mahdi Bahramian** ([MahdiGMK](https://github.com/MahdiGMK)) for ...
 - **AmirHossein Mirzaei** ([radical-1](https://github.com/radical-1)) for ...
