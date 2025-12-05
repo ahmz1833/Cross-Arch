@@ -18,6 +18,11 @@ if [ -z "$LAB_ARCH" ]; then
     exit 1
 fi
 
+# Helper function for cross-platform realpath (macOS doesn't have realpath by default)
+get_real_path() {
+    python3 -c "import os, sys; print(os.path.realpath(sys.argv[1]))" "$1"
+}
+
 IMAGE_NAME="ghcr.io/ahmz1833/cross-arch:${LAB_ARCH}"
 CMD_NAME=$(basename "$0")
 
@@ -28,7 +33,7 @@ FILE_PATHS=()
 # Collect file arguments
 for arg in "${ARGS[@]}"; do
     if [ -e "$arg" ]; then
-        FILE_PATHS+=("$(realpath "$arg")")
+        FILE_PATHS+=("$(get_real_path "$arg")")
     fi
 done
 
@@ -49,7 +54,7 @@ CONTAINER_MOUNT_POINT="/workspace"
 NEW_ARGS=()
 for arg in "${ARGS[@]}"; do
     if [ -e "$arg" ]; then
-        ABS_ARG=$(realpath "$arg")
+        ABS_ARG=$(get_real_path "$arg")
         REL_PATH="${ABS_ARG#$HOST_MOUNT_ROOT/}"
         if [ "$ABS_ARG" == "$HOST_MOUNT_ROOT" ]; then
              NEW_ARGS+=("$CONTAINER_MOUNT_POINT")
@@ -84,15 +89,38 @@ trap cleanup EXIT
 # --cidfile: Tracks container ID for robust cleanup
 
 # Determine flags: Always interactive (-i), but TTY (-t) only if connected to a terminal
-DOCKER_FLAGS=(-i --rm --init --cidfile "$CID_FILE" --platform linux/amd64)
+# Removed --rm to prevent hanging on some systems; cleanup is handled by trap
+DOCKER_FLAGS=(-i --init --cidfile "$CID_FILE" --platform linux/amd64)
 if [ -t 0 ]; then
     DOCKER_FLAGS+=(-t)
 fi
 
+# Disable set -e temporarily to capture exit code
+set +e
 docker run "${DOCKER_FLAGS[@]}" \
     -u "$(id -u):$(id -g)" \
     -v "$HOST_MOUNT_ROOT:$CONTAINER_MOUNT_POINT" \
     -w "$CONTAINER_MOUNT_POINT" \
     -e LAB_ARCH="$LAB_ARCH" \
     "$IMAGE_NAME" \
-    bash -l -c "$CMD_STRING"
+    bash -c "$CMD_STRING"
+EXIT_CODE=$?
+set -e
+
+# Handle Core Dump / Signals (simulate shell message)
+if [ $EXIT_CODE -gt 128 ]; then
+    SIG=$((EXIT_CODE - 128))
+    if [ $SIG -eq 11 ]; then
+        echo "Segmentation fault (core dumped)" >&2
+    elif [ $SIG -eq 6 ]; then
+        echo "Aborted (core dumped)" >&2
+    elif [ $SIG -eq 4 ]; then
+        echo "Illegal instruction (core dumped)" >&2
+    elif [ $SIG -eq 8 ]; then
+        echo "Floating point exception (core dumped)" >&2
+    elif [ $SIG -ne 2 ] && [ $SIG -ne 15 ]; then # Ignore SIGINT/SIGTERM
+        echo "Terminated with signal $SIG" >&2
+    fi
+fi
+
+exit $EXIT_CODE
