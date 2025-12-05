@@ -260,8 +260,6 @@ class AssemblyAnalyzer:
             # 2. Relocation Parsing (Priority Logic)
             reloc_match = reloc_pat.match(line)
             if reloc_match:
-                if is_dead: continue 
-
                 raw_target = reloc_match.group(1)
                 target = raw_target.split('@')[0]
                 target = re.sub(r'[+-]0x[0-9a-fA-F]+$', '', target)
@@ -291,7 +289,7 @@ class AssemblyAnalyzer:
             if instr_match:
                 mnem = instr_match.group(1).lower() # Normalize to lowercase
                 args = instr_match.group(2)
-                
+
                 # === CRITICAL FIX: FILTER DIRECTIVES ===
                 # Objdump often lists .word, .byte, .short in code sections.
                 # These are NOT instructions.
@@ -311,8 +309,6 @@ class AssemblyAnalyzer:
                     # If we have 3 args and all are synonyms for zero, treat as NOP
                     if len(parts) == 3 and all(p in zeros for p in parts):
                         continue
-
-                if is_dead: continue
 
                 if delay_slot > 0:
                     delay_slot -= 1
