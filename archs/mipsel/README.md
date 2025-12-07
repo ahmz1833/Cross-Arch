@@ -18,6 +18,11 @@ Useful PDF references can be found in the `docs/` directory:
 *   [o32callingconvention.pdf](docs/o32callingconvention.pdf): Details on the O32 ABI.
 *   [MD00565-2B-MIPS32-QRC-01.01.pdf](docs/MD00565-2B-MIPS32-QRC-01.01.pdf): MIPS32 Quick Reference Card.
 
+### MARS Simulator
+For educational purposes and GUI-based debugging, you can use **MARS (MIPS Assembler and Runtime Simulator)**.
+*   [Download MARS](https://dpetersanderson.github.io/download.html)
+*   Check out the `examples_mars/` directory for code specifically adapted for MARS.
+
 ---
 
 ## How to Build and Run
