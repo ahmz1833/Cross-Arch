@@ -367,6 +367,10 @@ split_asm_args() {
             -o*)
                  _linkargs+=("$arg")
                  ;;
+            # Other assembler flags (defines, warnings)
+            -P*|-p*|-D*|-U*|-f*|-w*|-M*)
+                _asmflags+=("$arg")
+                ;;
             *)
                 # Unknown/Generic args go to linker (like object files .o)
                 _linkargs+=("$arg")
@@ -549,15 +553,11 @@ main() {
                 list_tags; exit 0;;
             -h|--help)
                 usage; exit 0;;
-            --)
-                shift
-                USER_ARGS+=("$@")
-                break;;
-            *)
-                USER_ARGS+=("$1"); shift;;
+            --) shift; USER_ARGS+=("$@"); break;;
+            *) USER_ARGS+=("$1"); shift;;
         esac
     done
-
+    
     [[ ${#USER_ARGS[@]} -gt 0 ]] || die "No compilation arguments provided."
 
     # Normalize Mode Strings
