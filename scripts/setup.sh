@@ -221,6 +221,7 @@ if [ -z "$TARGET_ARCH" ] || [ "$TARGET_ARCH" = "amd64" ] || [ "$TARGET_ARCH" = "
     YUM_MISSING=()
     # Check for tools specific to Native build
     # Format: check_tool "binary" "apt" "pacman" "dnf"
+    check_tool "tmux" "tmux" "tmux" "tmux"
     check_tool "nasm" "nasm" "nasm" "nasm"
     check_tool "make" "build-essential" "base-devel" "make"
     check_tool "gcc"  "build-essential" "base-devel" "gcc"
@@ -237,6 +238,7 @@ PACMAN_MISSING=()
 DNF_MISSING=()
 YUM_MISSING=()
 # Check for tools specific to Cross build
+check_tool "tmux" "tmux" "tmux" "tmux"
 check_tool "make" "make" "make" "make"
 check_tool "wget" "wget" "wget" "wget"
 check_tool "curl" "curl" "curl" "curl"
