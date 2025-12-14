@@ -151,6 +151,8 @@ if [ -z "$TAG" ]; then
         RUNNER_CMD="gdbserver localhost:$FINAL_PORT $TARGET_BIN"
     fi
 
+    EXTRA_SET_COMMAND="-ex \"set disassembly-flavor intel\""
+    
 	GDB_BIN="gdb"
 	if ! command -v gdb &> /dev/null; then echo -e "${RED}Error: gdb not found.${NC}"; exit 1; fi
 	if ! command -v gdbserver &> /dev/null; then echo -e "${RED}Error: gdbserver not found.${NC}"; exit 1; fi
@@ -179,7 +181,9 @@ else
     else
         CURRENT_SYSROOT="$QEMU_LD_PREFIX"
     fi
-    
+
+    EXTRA_SET_COMMAND="-ex \"set sysroot $CURRENT_SYSROOT\""
+
     if command -v gdb-multiarch &> /dev/null; then
         GDB_BIN="gdb-multiarch"
     elif command -v gdb &> /dev/null; then
@@ -202,7 +206,7 @@ CMD_CLIENT_RAW="sleep 1; echo -e \"${GREEN}>>> Connecting GDB to Target...${NC}\
 	export TERM=xterm-256color; \
 	$GDB_BIN -q $TARGET_BIN \
 	-ex \"target remote localhost:$FINAL_PORT\" \
-	-ex \"set sysroot $CURRENT_SYSROOT\" \
+	${EXTRA_SET_COMMAND:-} \
 	-ex \"layout asm\" \
 	-ex \"layout regs\" \
 	-ex \"focus cmd\" \
