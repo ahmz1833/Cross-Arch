@@ -9,7 +9,7 @@ This repository also has useful examples and rich documents related to each arch
 This repository now supports 7 architectures, with a primary focus on the syllabus standards:
 
 - **[MIPS32 (Little Endian)](archs/mipsel/)** `mips` - *Core Syllabus of RISC systems*
-- **[Intel x86_64 (amd64) and i386)](archs/x86/)** `amd64` and `i386` - *Core Syllabus of CISC systems*
+- **[Intel x86_64 (AMD64 and i386)](archs/x86/)** `amd64` and `i386` - *Core Syllabus of CISC systems*
 - **[IBM s390x (Z13)](archs/s390x/)** `s390x` - *Core Syllabus (Mainframe)*
 - **[RISC-V (64-bit)](archs/riscv64/)** `riscv64` - *An open source and flexible architecture*
 - **[ARMv7 (32-bit)](archs/armv7/)** `armv7` - *A good example for addressing modes*
