@@ -26,7 +26,7 @@ _start:
     ;https://www.felixcloutier.com/x86/
     mov rax, 20
     mov rbx, 30
-    add rax, rbx
+    add rax, rbx ; RAX = RAX + RBX = 50
     
     ; mov rax, 3
     ; mov rbx, 7
