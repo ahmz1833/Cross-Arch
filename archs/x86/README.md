@@ -103,51 +103,51 @@ The `examples/` directory contains a progressive series of assembly programs. Ea
 ### 🟢 Basics & Syscalls
 *   **`00_hello_world.asm`**: The absolute minimum. Uses direct Linux syscalls (`sys_write`, `sys_exit`) to print to stdout.
 	```
-	lab-build -m nasm examples/00_hello_world.asm -o 00.elf && lab-run 00.elf
+	lab-build -m nasm examples/00_hello_world.asm -I include/ -o 00.elf && lab-run 00.elf
 	```
 *   **`01_hello_libc.asm`**: The "Standard" way. Links with C library (glibc) to use `printf`. Shows how to define `main` instead of `_start`.
     ```
-	lab-build -m nasm-gcc examples/01_hello_libc.asm -o 01.elf && lab-run 01.elf
+	lab-build -m nasm-gcc examples/01_hello_libc.asm -I include/ -o 01.elf && lab-run 01.elf
 	```
 *   **`02_input_output.asm`**: Basic interaction. Reads from stdin and writes to stdout using syscalls.
     ```
-	lab-build -m nasm examples/02_input_output.asm -o 02.elf && lab-run 02.elf
+	lab-build -m nasm examples/02_input_output.asm -I include/ -o 02.elf && lab-run 02.elf
 	```
 
 ### 🟡 Logic & Control Flow
 *   **`03_data_types.asm`**: Understanding sizes. Demonstrates `byte`, `word`, `dword`, `qword` and Endianness.
     ```
-	lab-build -m nasm examples/03_data_types.asm -o 03.elf && lab-run 03.elf
+	lab-build -m nasm examples/03_data_types.asm -I include/ -o 03.elf && lab-run 03.elf
 	```
 *   **`04_control_flow.asm`**: Decision making. Uses `cmp` (compare) and conditional jumps (`je`, `jne`, `jg`) to implement `if/else` and loops.
     ```
-	lab-build -m nasm examples/04_control_flow.asm -o 04.elf && lab-run 04.elf
+	lab-build -m nasm examples/04_control_flow.asm -I include/ -o 04.elf && lab-run 04.elf
 	```
 
 ### 🔵 Floating Point (SSE)
 *   **`05_floating_point.asm`**: Modern Math. Uses the **SSE** unit (`xmm` registers) for floating point arithmetic (`addsd`, `mulsd`). Shows how to print floats using `printf`.
     ```
-	lab-build -m nasm-gcc examples/05_floating_point.asm -o 05.elf && lab-run 05.elf
+	lab-build -m nasm-gcc examples/05_floating_point.asm -I include/ -o 05.elf && lab-run 05.elf
 	```
 
 ### 🟣 Functions & Stack
 *   **`06_functions.asm`**: Structure. Defines reusable functions, manages stack frames (`push rbp`), and handles command line arguments (`argc`, `argv`).
     ```
-	lab-build -m nasm-gcc examples/06_functions.asm -o 06.elf && lab-run 06.elf
+	lab-build -m nasm-gcc examples/06_functions.asm -I include/ -o 06.elf && lab-run 06.elf
 	```
 *   **`07_recursion.asm`**: Advanced Stack. A recursive factorial function demonstrating stack depth and return addresses.
     ```
-	lab-build -m nasm-gcc examples/07_recursion.asm -o 07.elf && lab-run 07.elf
+	lab-build -m nasm-gcc examples/07_recursion.asm -I include/ -o 07.elf && lab-run 07.elf
 	```
 *   **`08_many_args.asm`**: The ABI Limit. Demonstrates passing more than 6 arguments, forcing the use of the stack for argument passing.
     ```
-	lab-build -m nasm-gcc examples/08_many_args.asm -o 08.elf && lab-run 08.elf
+	lab-build -m nasm-gcc examples/08_many_args.asm -I include/ -o 08.elf && lab-run 08.elf
 	```
 
 ### 🔴 Advanced I/O
 *   **`09_file_libc.asm`**: High-level I/O. Uses C standard library functions (`fopen`, `fprintf`, `fscanf`) for file operations.
     ```
-	lab-build -m nasm-gcc examples/09_file_libc.asm -o 09.elf && lab-run 09.elf
+	lab-build -m nasm-gcc examples/09_file_libc.asm -I include/ -o 09.elf && lab-run 09.elf
 	```
 
 ### 🟠 Legacy 32-bit Mode
