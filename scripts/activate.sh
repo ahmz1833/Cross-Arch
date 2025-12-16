@@ -131,7 +131,7 @@ if is_sourced; then
             unset -f "lab-$cmd" 2>/dev/null
             alias "lab-$cmd"=$cmd 2>/dev/null
         done
-        alias lab-run="env PATH=.:$PATH" 2>/dev/null
+        alias lab-run="env PATH=\".:$PATH\"" 2>/dev/null
 
         # Try to clean prompt (Best effort)
         [ -n "$BASH_VERSION" ] && export PS1="${PS1//($OLD_TAG-lab)/}"
