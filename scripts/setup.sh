@@ -225,6 +225,7 @@ if [ -z "$TARGET_ARCH" ] || [ "$TARGET_ARCH" = "amd64" ] || [ "$TARGET_ARCH" = "
     check_tool "nasm" "nasm" "nasm" "nasm"
     check_tool "make" "build-essential" "base-devel" "make"
     check_tool "gcc"  "build-essential" "base-devel" "gcc"
+    check_tool "gdbserver" "gdbserver" "gdb" "gdb-gdbserver"
     # Run Installation
     install_missing_packages
     echo -e "${GREEN}>>> Setup for nasm and amd64 environment checked/completed.${NC}"
@@ -247,6 +248,7 @@ check_tool "file" "file" "file" "file"
 # Check for GDB
 # Ubuntu uses gdb-multiarch, Arch/Fedora usually include multiarch support in standard gdb
 check_tool "gdb" "gdb-multiarch" "gdb" "gdb"
+check_tool "gdbserver" "gdbserver" "gdb" "gdb-gdbserver"
 # Check for QEMU User
 check_tool "qemu-${ARCH_ABBREV}" "qemu-user" "qemu-user" "qemu-user"
 # Run Installation
