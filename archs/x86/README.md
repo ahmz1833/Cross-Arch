@@ -6,6 +6,8 @@ This directory contains resources, examples, and documentation for the **Intel x
 
 This guide focuses primarily on **64-bit Assembly (NASM syntax)** on Linux, which is the standard for modern systems.
 
+#### **Workshop Video :** [Google Drive Link](https://drive.google.com/file/d/1po04lNEboSfPHZfMsDIv1QHp0IIHCK0F/view)
+
 ## Documentation & Resources
 
 ### Essential Reading (Web)
@@ -199,6 +201,7 @@ This defines how functions call each other.
 
 ### The Rules (Function Calls)
 1.  **Args**: First 6 in `RDI, RSI, RDX, RCX, R8, R9`. Rest on stack (reverse order).
+	**Remember:** ***Di**enna's **Si**lk **D**ress **C**osts **89**$*
 2.  **Return**: `RAX`.
 3.  **Preserved**: `RBX, RBP, R12-R15`.
 4.  **Stack Alignment**: `RSP` must be **16-byte aligned** before `call`.
