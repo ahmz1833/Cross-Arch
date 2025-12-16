@@ -8,7 +8,7 @@
 
 %include "macros.inc"
 
-section .data
+section .data 
     msg db "Hello, x86_64 World!", 0
 
 section .text
@@ -28,12 +28,18 @@ _start:
     mov rbx, 30
     add rax, rbx ; RAX = RAX + RBX = 50
     
+
+    ; Memory syntax : [msg] , [rax], etc
+
     ; mov rax, 3
     ; mov rbx, 7
     mul rbx; RDX:RAX = RAX*SOURC(RBX)
     ;; 21
 
+
     print_int rax
+    print_newline
+    print_int rdx
 
     ; Exit
     exit

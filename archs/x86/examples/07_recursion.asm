@@ -79,7 +79,7 @@ factorial:
     mov     rdi, [rbp-8]
     
     ; Result = n * factorial(n-1)
-    mul     rdi         ; rax = rax * rdi
+    mul     rdi         ; rdx:rax = rax * rdi
     jmp     .done
 
 .base_case:

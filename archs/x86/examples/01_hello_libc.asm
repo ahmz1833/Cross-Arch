@@ -19,20 +19,43 @@ section .text
 default rel
 global main
 
+
+
+bar:
+    enter 0,0
+    ;xor rbx, rbx
+    ;div rbx
+    leave
+    ret
+
+foo:
+    enter 0,0
+
+    ; works
+    call printf
+    call bar
+    
+    ; setup return value
+    mov     rax, 10
+    leave
+    ret
+
 ; SystemV AMD64 ABI 
 ; Integer Function arguments : RDI, RSI, RDX, RCX, R8, R9, (Extra on stack)
 ; Float/Double Function arguments : [XYZ]MM[0-7]
 ; Return value : RAX
 ; More Info : https://wiki.osdev.org/System_V_ABI#x86-64
 main:
+; 16k + 8
     ; we are working with c => rsp % 16 = 0 before any function call
-    enter   0, 0            ; Setup stack frame (push rbp; mov rbp, rsp)
-
+    enter   16, 0            ; Setup stack frame (push rbp; mov rbp, rsp)
+    
+; RSP == 16k
     ; 1. Simple printf
     ; printf(msg)
     lea     rdi, [msg]
     xor     rax, rax        ; Clear AL (0 vector registers used for varargs)
-    call    printf
+    call    foo
 
     ; 2. Formatted printf
     ; printf(fmt, 42, msg)
@@ -47,13 +70,13 @@ main:
 
     ;amd64(X86-64) ASSEMBLY INSTRUCTION REFERENCE
     ;https://www.felixcloutier.com/x86/
-    ; mov rax, 20
-    ; mov rbx, 30
-    ; add rax, rbx
+    mov rax, 20
+    mov rbx, 30
+    add rax, rbx
     
     ; mov rax, 3
     ; mov rbx, 7
-    mul rbx; RDX:RAX = RAX*SOURC(RBX)
+    ;mul rbx; RDX:RAX = RAX*SOURC(RBX)
     ;; 21
     
     ; Epilogue
