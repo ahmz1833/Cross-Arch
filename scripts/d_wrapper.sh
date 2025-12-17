@@ -90,7 +90,7 @@ trap cleanup EXIT
 
 # Determine flags: Always interactive (-i), but TTY (-t) only if connected to a terminal
 # Removed --rm to prevent hanging on some systems; cleanup is handled by trap
-DOCKER_FLAGS=(-i --init --cidfile "$CID_FILE" --platform linux/amd64)
+DOCKER_FLAGS=(--cap-add=SYS_PTRACE --security-opt seccomp=unconfined -i --init --cidfile "$CID_FILE" --platform linux/amd64)
 if [ -t 0 ]; then
     DOCKER_FLAGS+=(-t)
 fi
