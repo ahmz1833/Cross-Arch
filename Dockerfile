@@ -34,16 +34,16 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME
 
-# Install QEMU static binary for non-amd64 architectures
+# Install QEMU static binary for ALL architectures (including amd64 for Apple Silicon support)
 RUN set -e; \
-    if [ "${LAB_ARCH}" != "amd64" ] && [ "${LAB_ARCH}" != "x86_64" ]; then \
-        QEMU_ARCH=$(echo "$LAB_ARCH" | sed 's/^mips$/mipsel/; s/^armv7$/arm/'); \
-        echo ">>> Downloading QEMU for: $QEMU_ARCH"; \
-        wget -q "https://github.com/multiarch/qemu-user-static/releases/download/v7.2.0-1/qemu-${QEMU_ARCH}-static" -O /usr/bin/qemu-${QEMU_ARCH}; \
-        chmod +x /usr/bin/qemu-${QEMU_ARCH}; \
+    if [ "${LAB_ARCH}" = "amd64" ] || [ "${LAB_ARCH}" = "x86_64" ]; then \
+        QEMU_ARCH="x86_64"; \
     else \
-        echo ">>> Native architecture (amd64). Skipping QEMU."; \
-    fi
+        QEMU_ARCH=$(echo "$LAB_ARCH" | sed 's/^mips$/mipsel/; s/^armv7$/arm/'); \
+    fi;  \
+    echo ">>> Downloading QEMU for: $QEMU_ARCH"; \
+    wget -q "https://github.com/multiarch/qemu-user-static/releases/download/v7.2.0-1/qemu-${QEMU_ARCH}-static" -O /usr/bin/qemu-${QEMU_ARCH}; \
+    chmod +x /usr/bin/qemu-${QEMU_ARCH};
 
 # Install the scripts and make convenient symlinks
 COPY scripts/setup.sh scripts/build.sh scripts/debug.sh /usr/local/bin/

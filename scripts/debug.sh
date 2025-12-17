@@ -132,14 +132,23 @@ fi
 
 # --- Prepare Commands ---
 FINAL_PORT=$(find_free_port "$PORT")
-if [ -z "$TAG" ]; then
-    # === NATIVE MODE ===
+
+# --- Detect Architecture Mismatch (Docker on Apple Silicon) ---
+USE_QEMU_FOR_AMD64=0
+if [ -z "$TAG" ] && [ -f "/.dockerenv" ]; then
+    if grep -qE "aarch64|arm64" /proc/version; then
+        echo -e "${YLW}>>> Detected Docker on Apple Silicon. Forcing QEMU for x86_64/amd64.${NC}"
+        USE_QEMU_FOR_AMD64=1
+    fi
+fi
+
+if [ -z "$TAG" ] && [ "$USE_QEMU_FOR_AMD64" -eq 0 ]; then
+    # === NATIVE MODE (Real Linux amd64) ===
     MODE="NATIVE"
 
-    # Build escaped argument string for safe embedding inside command strings
+    # Build escaped argument string
     EXEC_ARGS_ESC=""
     for __a in "${EXEC_ARGS[@]}"; do
-        # escape backslashes and double quotes for safe double-quoted tokens
         __esc=${__a//\\/\\\\}
         __esc=${__esc//\"/\\\"}
         EXEC_ARGS_ESC+=" \"$__esc\""
@@ -153,16 +162,40 @@ if [ -z "$TAG" ]; then
 
     EXTRA_SET_COMMAND="-ex \"set disassembly-flavor intel\""
     
-	GDB_BIN="gdb"
-	if ! command -v gdb &> /dev/null; then echo -e "${RED}Error: gdb not found.${NC}"; exit 1; fi
-	if ! command -v gdbserver &> /dev/null; then echo -e "${RED}Error: gdbserver not found.${NC}"; exit 1; fi
-else
-    # === CROSS MODE ===
-    MODE="CROSS"
-    QEMU_BIN=$(get_qemu_binary "$TAG")
-    source "/opt/${TAG}-lab/activate" > /dev/null || { echo -e "${RED}Error: Could not source toolchain for tag: $TAG${NC}"; exit 1; }
+    GDB_BIN="gdb"
+    if ! command -v gdb &> /dev/null; then echo -e "${RED}Error: gdb not found.${NC}"; exit 1; fi
+    if ! command -v gdbserver &> /dev/null; then echo -e "${RED}Error: gdbserver not found.${NC}"; exit 1; fi
 
-    # Build escaped argument string for safe embedding inside command strings (reuse if already built)
+else
+    # === CROSS MODE OR EMULATED AMD64 ===
+    MODE="CROSS"
+    
+    if [ "$USE_QEMU_FOR_AMD64" -eq 1 ]; then
+        QEMU_BIN="qemu-x86_64"
+        GDB_BIN="gdb"
+        EXTRA_SET_COMMAND="-ex \"set disassembly-flavor intel\""
+    else
+        QEMU_BIN=$(get_qemu_binary "$TAG")
+        source "/opt/${TAG}-lab/activate" > /dev/null || { echo -e "${RED}Error: Could not source toolchain for tag: $TAG${NC}"; exit 1; }
+        
+        if [ -z "${QEMU_LD_PREFIX:-}" ]; then
+            CURRENT_SYSROOT=$(grep "export QEMU_LD_PREFIX" "$ACTIVATE_SCRIPT" | cut -d'"' -f2)
+        else
+            CURRENT_SYSROOT="$QEMU_LD_PREFIX"
+        fi
+        EXTRA_SET_COMMAND="-ex \"set sysroot $CURRENT_SYSROOT\""
+        
+        if command -v gdb-multiarch &> /dev/null; then
+            GDB_BIN="gdb-multiarch"
+        elif command -v gdb &> /dev/null; then
+            GDB_BIN="gdb"
+        else
+            echo -e "${RED}Error: Neither 'gdb-multiarch' nor 'gdb' found.${NC}"
+            exit 1
+        fi
+    fi
+
+    # Build escaped argument string
     EXEC_ARGS_ESC=""
     for __a in "${EXEC_ARGS[@]}"; do
         __esc=${__a//\\/\\\\}
@@ -170,31 +203,13 @@ else
         EXEC_ARGS_ESC+=" \"$__esc\""
     done
 
+    # QEMU Command Construction
     if [[ -n "${EXEC_ARGS_ESC}" ]]; then
-        RUNNER_CMD="QEMU_LD_PREFIX=\"$QEMU_LD_PREFIX\" $QEMU_BIN -g $FINAL_PORT $TARGET_BIN$EXEC_ARGS_ESC"
+        RUNNER_CMD="QEMU_LD_PREFIX=\"${QEMU_LD_PREFIX:-}\" $QEMU_BIN -g $FINAL_PORT $TARGET_BIN$EXEC_ARGS_ESC"
     else 
-        RUNNER_CMD="QEMU_LD_PREFIX=\"$QEMU_LD_PREFIX\" $QEMU_BIN -g $FINAL_PORT $TARGET_BIN"
+        RUNNER_CMD="QEMU_LD_PREFIX=\"${QEMU_LD_PREFIX:-}\" $QEMU_BIN -g $FINAL_PORT $TARGET_BIN"
     fi
 
-    if [ -z "${QEMU_LD_PREFIX:-}" ]; then
-        CURRENT_SYSROOT=$(grep "export QEMU_LD_PREFIX" "$ACTIVATE_SCRIPT" | cut -d'"' -f2)
-    else
-        CURRENT_SYSROOT="$QEMU_LD_PREFIX"
-    fi
-
-    EXTRA_SET_COMMAND="-ex \"set sysroot $CURRENT_SYSROOT\""
-
-    if command -v gdb-multiarch &> /dev/null; then
-        GDB_BIN="gdb-multiarch"
-    elif command -v gdb &> /dev/null; then
-        GDB_BIN="gdb"
-    else
-        echo -e "${RED}Error: Neither 'gdb-multiarch' nor 'gdb' found.${NC}"
-        exit 1
-    fi
-
-    #GDB_BIN=$(find "/opt/${TAG}-lab/bin" -name "*-linux-gdb" | head -n 1)
-    #if [ -z "$GDB_BIN" ] || [ ! -x "$GDB_BIN" ]; then echo -e "${RED}Error: Cross GDB binary not found in /opt/${TAG}-lab/bin.${NC}"; exit 1; fi
     if ! command -v "$QEMU_BIN" &> /dev/null; then echo -e "${RED}Error: $QEMU_BIN not found. Please install QEMU user binaries.${NC}"; exit 1; fi
 fi
 
