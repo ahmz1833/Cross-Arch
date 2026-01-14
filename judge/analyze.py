@@ -13,7 +13,7 @@ MIPS_CONFIG = {
     'terminators':    {'j', 'b', 'jr', 'beq', 'bne'}, 
     'has_delay_slot': True,
     'syscall_reg':    r'v0',
-}
+} 
 
 ARCH_CONFIG = {
     'mips':   MIPS_CONFIG,
@@ -391,23 +391,71 @@ class AssemblyAnalyzer:
                     else:
                         self.functions[current_scope]['syscalls'].add('?')
 
+    def _analyze_adhoc(self, func):
+        """
+        Ad-hoc analysis for a label that wasn't identified as a function initially.
+        Collects blocks starting from 'func' until the next identified function.
+        """
+        data = {
+            'callees': set(), 
+            'instrs': set(), 
+            'syscalls': set()
+        }
+        
+        try:
+            start_idx = self.label_order.index(func)
+        except ValueError:
+            return None
+
+        for i in range(start_idx, len(self.label_order)):
+            label = self.label_order[i]
+            # Stop if we hit a known function (that isn't the one we started with)
+            if label in self.identified_funcs and label != func:
+                break
+            
+            for item in self.raw_blocks[label]:
+                if 'mnem' in item:
+                    data['instrs'].add(item['mnem'])
+                
+                if item['type'] == 'call':
+                    data['callees'].add(item['target'])
+                elif item['type'] == 'syscall':
+                    val = item['syscall_val']
+                    if val != 'unknown':
+                        data['syscalls'].add(str(val))
+                    else:
+                        data['syscalls'].add('?')
+        return data
+
+    def _get_func_data(self, func):
+        if func in self.functions:
+            return self.functions[func]
+        if func in self.raw_blocks:
+            return self._analyze_adhoc(func)
+        return None
+
     # Getters
     def get_all_functions(self):
         return sorted(list(self.functions.keys()))
 
     def get_direct_callees(self, func):
-        if func not in self.functions: return []
-        return sorted(list(self.functions[func]['callees']))
+        data = self._get_func_data(func)
+        if not data: return []
+        return sorted(list(data['callees']))
 
     def get_indirect_callees(self, func):
-        if func not in self.functions: return []
+        data = self._get_func_data(func)
+        if not data: return []
+        
         visited = set()
         queue = deque([func])
         result = set()
+        
         while queue:
             curr = queue.popleft()
             if curr in visited: continue
             visited.add(curr)
+            
             if curr != func: result.add(curr)
             if curr in self.functions:
                 for child in self.functions[curr]['callees']:
@@ -416,13 +464,15 @@ class AssemblyAnalyzer:
         return sorted(list(result))
 
     def get_syscalls(self, func):
-        if func not in self.functions: return []
-        res = sorted(list(self.functions[func]['syscalls']))
+        data = self._get_func_data(func)
+        if not data: return []
+        res = sorted(list(data['syscalls']))
         return [r for r in res if r != '?'] + (['?'] if '?' in res else [])
 
     def get_direct_instrs(self, func):
-        if func not in self.functions: return []
-        return sorted(list(self.functions[func]['instrs']))
+        data = self._get_func_data(func)
+        if not data: return []
+        return sorted(list(data['instrs']))
 
     def get_indirect_instrs(self, func):
         callees = self.get_indirect_callees(func)
