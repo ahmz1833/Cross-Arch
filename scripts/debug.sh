@@ -133,14 +133,14 @@ fi
 # --- Prepare Commands ---
 FINAL_PORT=$(find_free_port "$PORT")
 
-# --- Detect Architecture Mismatch (Docker on Apple Silicon) ---
-#USE_QEMU_FOR_AMD64=0
-#if [ -z "$TAG" ] && [ -f "/.dockerenv" ]; then
-#    if grep -qE "aarch64|arm64" /proc/version; then
-#        echo -e "${YLW}>>> Detected Docker on Apple Silicon. Forcing QEMU for x86_64/amd64.${NC}"
+# --- Detect Docker + AMD64 target: use QEMU ---
+USE_QEMU_FOR_AMD64=0
+if [ -f "/.dockerenv" ]; then
+    if [ -z "$TAG" ] || [ "$TAG" = "amd64" ] || [ "$TAG" = "x86_64" ]; then
+        echo -e "${YLW}>>> Detected Docker with amd64 target. Using QEMU for debugging.${NC}"
         USE_QEMU_FOR_AMD64=1
-#    fi
-#fi
+    fi
+fi
 
 if [ -z "$TAG" ] && [ "$USE_QEMU_FOR_AMD64" -eq 0 ]; then
     # === NATIVE MODE (Real Linux amd64) ===
