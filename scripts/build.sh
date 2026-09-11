@@ -55,6 +55,7 @@ SUPPORTED_TAGS_INFO=(
   "aarch64:AArch64 lab"
   "armv7:ARMv7 hard-float lab"
   "riscv64:RV64GC lab"
+  "riscv32:RV32I 32-bit lab"
   "i386:x86 32-bit lab"
 )
 
@@ -280,6 +281,12 @@ apply_arch_defaults() {
         riscv64)
             # RISC-V 64-bit General Purpose
             ARCH_CFLAGS=(-march=rv64gc -mabi=lp64d)
+            ;;
+        riscv32)
+            # Allow C code to use the toolchain's native hardware-float ABI so glibc works
+            ARCH_CFLAGS=(-march=rv32gc -mabi=ilp32d)
+            # STRICTLY enforce base RV32I for all student assembly code
+            ARCH_ASFLAGS=(-march=rv32i -mabi=ilp32)
             ;;
         i386|x86)
             # x86 32-bit

@@ -7,7 +7,7 @@ set -u
 ## ==============================================================================
 
 # Defaults (kept from the original)
-SUPPORTED_ARCHS=("mips" "s390x" "aarch64" "armv7" "riscv64" "i386")
+SUPPORTED_ARCHS=("mips" "s390x" "aarch64" "armv7" "riscv64" "riscv32" "i386")
 TOOLCHAIN_VER="stable-2025.08-1"
 LIBC="glibc"
 FORCE=0
@@ -156,6 +156,7 @@ SUPPORTED_ARCHS=(
     "aarch64:aarch64:aarch64:AARCH64:/opt/aarch64-lab"
     "armv7:armv7-eabihf:arm:ARM-v7:/opt/armv7-lab"
     "riscv64:riscv64-lp64d:riscv64:RISC-V:/opt/riscv64-lab"
+    "riscv32:riscv32-ilp32d:riscv32:RISC-V32:/opt/riscv32-lab"
     "i386:x86-core2:i386:x86-32bit:/opt/i386-lab"
 )
 
@@ -168,7 +169,8 @@ if [ -n "${TAG}" ]; then
         arm|armv7|armv7-eabihf) TAG="armv7" ;;
         i386|x86|i86pc) TAG="i386" ;;
         aarch64|arm64) TAG="aarch64" ;;
-        riscv|riscv64) TAG="riscv64" ;;
+        riscv64) TAG="riscv64" ;;
+        riscv32) TAG="riscv32" ;;
         s390x|s390) TAG="s390x" ;;
         *) ;;
     esac

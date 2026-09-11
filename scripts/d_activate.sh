@@ -16,7 +16,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]] && [[ -z "$ZSH_EVAL_CONTEXT" ]]; then
 fi
 
 TARGET="$1"
-VALID_ARCHS="amd64 mips s390x riscv64 armv7 aarch64 i386"
+VALID_ARCHS="amd64 mips s390x riscv64 riscv32 armv7 aarch64 i386"
 
 if [ -z "$TARGET" ]; then
     echo "Usage: source lab-activate <arch>"
