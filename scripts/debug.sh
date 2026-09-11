@@ -60,6 +60,7 @@ get_qemu_binary() {
         armv7)   echo "qemu-arm" ;;
         aarch64) echo "qemu-aarch64" ;;
         riscv64) echo "qemu-riscv64" ;;
+        riscv32) echo "qemu-riscv32" ;;
         s390x)   echo "qemu-s390x" ;;
         *)       echo "qemu-$tag" ;;
     esac
